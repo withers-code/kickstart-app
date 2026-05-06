@@ -52,6 +52,7 @@ export default function App() {
   const [sowText, setSowText] = useState('')
   const [customInstructions, setCustomInstructions] = useState({})
   const [artefactExamples, setArtefactExamples] = useState({})
+  const [projectHistory, setProjectHistory] = useState([])
 
   // Load state once auth is resolved (or immediately when auth is disabled)
   useEffect(() => {
@@ -62,6 +63,7 @@ export default function App() {
     setMaxTokens(parseInt(lsGet('sr_max_tokens', userId) || '4000'))
     setCustomInstructions(lsGetJSON('sr_artefact_instructions', userId, {}))
     setArtefactExamples(lsGetJSON('sr_artefact_examples', userId, {}))
+    setProjectHistory(lsGetJSON('sr_project_history', userId, []))
     setStateLoaded(true)
   }, [authReady, userId])
 
@@ -71,13 +73,50 @@ export default function App() {
   useEffect(() => { if (stateLoaded) lsSet('sr_max_tokens', userId, String(maxTokens)) }, [maxTokens, stateLoaded, userId])
   useEffect(() => { if (stateLoaded) lsSet('sr_artefact_instructions', userId, JSON.stringify(customInstructions)) }, [customInstructions, stateLoaded, userId])
   useEffect(() => { if (stateLoaded) lsSet('sr_artefact_examples', userId, JSON.stringify(artefactExamples)) }, [artefactExamples, stateLoaded, userId])
+  useEffect(() => { if (stateLoaded) lsSet('sr_project_history', userId, JSON.stringify(projectHistory)) }, [projectHistory, stateLoaded, userId])
+
+  // ── Project history helpers ───────────────────────────────────────────────────
+  function saveToHistory({ ctx, theme, selected, results }) {
+    if (!ctx.pname) return
+    setProjectHistory(prev => {
+      const existingIdx = prev.findIndex(e => e.id && e.pname === ctx.pname && e.cname === ctx.cname)
+      const entry = {
+        id: existingIdx >= 0 ? prev[existingIdx].id : String(Date.now()),
+        pname: ctx.pname,
+        cname: ctx.cname || '',
+        timestamp: new Date().toISOString(),
+        ctx: { ...ctx },
+        theme: { ...theme },
+        artefactIds: [...selected],
+        generatedIds: results.filter(r => r.status === 'done' || r.status === 'prompt').map(r => r.id),
+      }
+      if (existingIdx >= 0) {
+        const updated = [...prev]
+        updated[existingIdx] = entry
+        return updated
+      }
+      return [entry, ...prev.slice(0, 49)]
+    })
+  }
+
+  function deleteFromHistory(id) {
+    setProjectHistory(prev => prev.filter(e => e.id !== id))
+    if (activeHistoryEntry?.id === id) setActiveHistoryEntry(null)
+  }
 
   // ── UI state ──────────────────────────────────────────────────────────────────
   const [page, setPage] = useState('generate')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [activeHistoryEntry, setActiveHistoryEntry] = useState(null)
   const meta = PAGE_META[page] || PAGE_META.generate
 
   const handlePageChange = (newPage) => { setPage(newPage); setSidebarOpen(false) }
+
+  function handleLoadHistory(entry) {
+    setActiveHistoryEntry(entry)
+    setPage('generate')
+    setSidebarOpen(false)
+  }
 
   // ── Render guards ─────────────────────────────────────────────────────────────
   if (AUTH_ENABLED && !authReady) {
@@ -103,7 +142,7 @@ export default function App() {
       }} onClick={() => setSidebarOpen(false)} />
 
       <div style={{ display: 'flex' }}>
-        <Sidebar page={page} setPage={handlePageChange} sidebarOpen={sidebarOpen} account={account} onSignOut={() => setAccount(null)} />
+        <Sidebar page={page} setPage={handlePageChange} sidebarOpen={sidebarOpen} account={account} onSignOut={() => setAccount(null)} history={projectHistory} activeHistoryId={activeHistoryEntry?.id} onLoadHistory={handleLoadHistory} onDeleteHistory={deleteFromHistory} />
       </div>
 
       {/* Main content */}
@@ -123,7 +162,7 @@ export default function App() {
         {/* Content */}
         <div style={{ padding: 'clamp(16px, 5vw, 28px)', overflowY: 'auto', flex: 1, width: '100%' }}>
           <div style={{ maxWidth: 'min(1020px, 100%)', width: '100%', marginLeft: 'auto', marginRight: 'auto' }}>
-            {page === 'generate' && <GeneratePage apiKey={apiKey} model={model} maxTokens={maxTokens} sowText={sowText} setSowText={setSowText} customInstructions={customInstructions} artefactExamples={artefactExamples} />}
+            {page === 'generate' && <GeneratePage apiKey={apiKey} model={model} maxTokens={maxTokens} sowText={sowText} setSowText={setSowText} customInstructions={customInstructions} artefactExamples={artefactExamples} activeHistoryEntry={activeHistoryEntry} onSaveHistory={saveToHistory} />}
             {page === 'instructions' && <InstructionsPage instructions={customInstructions} setInstructions={setCustomInstructions} examples={artefactExamples} setExamples={setArtefactExamples} />}
             {page === 'guide' && <GuidePage />}
             {page === 'settings' && <SettingsPage apiKey={apiKey} setApiKey={setApiKey} model={model} setModel={setModel} maxTokens={maxTokens} setMaxTokens={setMaxTokens} sowText={sowText} setSowText={setSowText} />}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Briefcase, Palette, CheckSquare, Zap } from 'lucide-react'
 import { Card, CardTitle, Field, Input, Select, Textarea, Btn, Alert, FormGrid } from '../components/ui.jsx'
 import GenerationBanner from '../components/GenerationBanner.jsx'
@@ -13,7 +13,7 @@ import { genConfluencePrompt, genJiraPrompt } from '../lib/atlassianGenerators.j
 
 const PRESET_SR = THEME_PRESETS['sprint-reply']
 
-export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText, customInstructions, artefactExamples }) {
+export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText, customInstructions, artefactExamples, activeHistoryEntry, onSaveHistory }) {
   const [ctx, setCtx] = useState({
     pname: '', cname: '', clientContact: '', dm: '', start: '',
     method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '',
@@ -26,6 +26,15 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
   const [generating, setGenerating] = useState(false)
 
   const allCount = ALL_ARTS.length
+
+  // Load context from a history entry when user clicks one in sidebar
+  useEffect(() => {
+    if (!activeHistoryEntry) return
+    setCtx({ ...activeHistoryEntry.ctx })
+    setTheme(activeHistoryEntry.theme || theme)
+    setSelected(new Set(activeHistoryEntry.artefactIds || []))
+    setResults([])
+  }, [activeHistoryEntry]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleArt(id) {
     setSelected(s => {
@@ -62,10 +71,6 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
   const opts = { apiKey, model: model || 'claude-sonnet-4-20250514', maxTokens: maxTokens || 4000 }
   const fullCtx = { ...ctx, sow: sowText, theme, instructions: customInstructions, examples: artefactExamples }
 
-  function updateResult(id, patch) {
-    setResults(rs => rs.map(r => r.id === id ? { ...r, ...patch } : r))
-  }
-
   async function generateAll() {
     if (!apiKey) { alert('Add your Anthropic API key in Settings first.'); return }
     if (selected.size === 0) { alert('Select at least one artefact.'); return }
@@ -73,11 +78,15 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
     setGenerating(true)
     const arts = ALL_ARTS.filter(a => selected.has(a.id))
 
-    // Initialise all cards as 'working'
-    setResults(arts.map(a => ({
-      id: a.id, name: a.name, type: a.type, status: 'working',
-      projectName: ctx.pname || 'project',
-    })))
+    // Initialise all cards as 'working' — also track locally for history
+    const tracked = arts.map(a => ({ id: a.id, name: a.name, type: a.type, status: 'working', projectName: ctx.pname || 'project' }))
+    setResults([...tracked])
+
+    function updateResult(id, patch) {
+      const idx = tracked.findIndex(r => r.id === id)
+      if (idx >= 0) tracked[idx] = { ...tracked[idx], ...patch }
+      setResults([...tracked])
+    }
 
     // DOCX generators map
     const docxFns = {
@@ -131,6 +140,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
     }
 
     setGenerating(false)
+    onSaveHistory?.({ ctx, theme, selected, results: tracked })
   }
 
   return (
