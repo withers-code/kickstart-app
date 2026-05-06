@@ -3,7 +3,6 @@ import { FileText, Info, Settings, SlidersHorizontal, LogOut, X, Clock } from 'l
 import { AUTH_ENABLED, signOut } from '../lib/auth.js'
 
 const NAV = [
-  { id: 'generate', label: 'Generate documents', Icon: FileText },
   { id: 'instructions', label: 'Custom instructions', Icon: SlidersHorizontal },
   { id: 'guide', label: 'How to use', Icon: Info },
   { id: 'settings', label: 'API & settings', Icon: Settings },
@@ -28,7 +27,7 @@ function formatDate(iso) {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
-export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut, history = [], activeHistoryId, onLoadHistory, onDeleteHistory }) {
+export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut, history = [], activeSessionId, onNewSession, onLoadHistory, onDeleteHistory }) {
   const [clientFilter, setClientFilter] = useState('')
   const [deleteTarget, setDeleteTarget] = useState(null)
 
@@ -76,6 +75,27 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
           <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--t3)', padding: '0 8px', marginBottom: 4, display: 'block' }}>
             Workspace
           </span>
+
+          {/* Generate documents — action button */}
+          <button
+            onClick={onNewSession}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 9,
+              padding: '8px 10px', borderRadius: 8,
+              cursor: 'pointer', fontSize: 13, fontWeight: 400,
+              color: 'var(--t2)', background: 'transparent',
+              transition: 'all 0.12s', border: 'none', width: '100%', textAlign: 'left',
+            }}
+          >
+            <FileText size={15} />
+            <span style={{ flex: 1 }}>Generate documents</span>
+            <span style={{
+              fontSize: 12, fontWeight: 700, lineHeight: 1,
+              color: 'var(--purple)', background: 'var(--pl)',
+              borderRadius: 5, padding: '2px 6px',
+            }}>+</span>
+          </button>
+
           {NAV.map(({ id, label, Icon }) => (
             <button
               key={id}
@@ -84,9 +104,9 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
                 display: 'flex', alignItems: 'center', gap: 9,
                 padding: '8px 10px', borderRadius: 8,
                 cursor: 'pointer', fontSize: 13,
-                fontWeight: page === id && !activeHistoryId ? 500 : 400,
-                color: page === id && !activeHistoryId ? 'var(--purple)' : 'var(--t2)',
-                background: page === id && !activeHistoryId ? 'var(--pl)' : 'transparent',
+                fontWeight: page === id ? 500 : 400,
+                color: page === id ? 'var(--purple)' : 'var(--t2)',
+                background: page === id ? 'var(--pl)' : 'transparent',
                 transition: 'all 0.12s', border: 'none', width: '100%', textAlign: 'left',
               }}
             >
@@ -121,38 +141,43 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
             )}
 
             <div style={{ overflowY: 'auto', flex: 1, padding: '0 8px' }}>
-              {filteredHistory.map(entry => (
-                <div key={entry.id} style={{ position: 'relative', marginBottom: 2 }}>
-                  <button
-                    onClick={() => onLoadHistory?.(entry)}
-                    style={{
-                      width: '100%', textAlign: 'left', background: activeHistoryId === entry.id ? 'var(--pl)' : 'transparent',
-                      border: 'none', borderRadius: 8, padding: '7px 28px 7px 10px',
-                      cursor: 'pointer', transition: 'background 0.12s',
-                    }}
-                  >
-                    <div style={{ fontSize: 12, fontWeight: 500, color: activeHistoryId === entry.id ? 'var(--purple)' : 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {entry.pname}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {[entry.cname, formatDate(entry.timestamp)].filter(Boolean).join(' · ')}
-                    </div>
-                  </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); setDeleteTarget(entry) }}
-                    title="Delete"
-                    style={{
-                      position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      color: 'var(--t3)', padding: 4, borderRadius: 4,
-                      display: 'flex', alignItems: 'center',
-                      opacity: 0.6,
-                    }}
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
+              {filteredHistory.map(entry => {
+                const isActive = activeSessionId === entry.id
+                const displayName = entry.pname || 'Untitled'
+                return (
+                  <div key={entry.id} style={{ position: 'relative', marginBottom: 2 }}>
+                    <button
+                      onClick={() => onLoadHistory?.(entry)}
+                      style={{
+                        width: '100%', textAlign: 'left',
+                        background: isActive ? 'var(--pl)' : 'transparent',
+                        border: 'none', borderRadius: 8, padding: '7px 28px 7px 10px',
+                        cursor: 'pointer', transition: 'background 0.12s',
+                      }}
+                    >
+                      <div style={{ fontSize: 12, fontWeight: 500, color: isActive ? 'var(--purple)' : 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontStyle: entry.pname ? 'normal' : 'italic' }}>
+                        {displayName}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {[entry.cname, formatDate(entry.timestamp)].filter(Boolean).join(' · ')}
+                      </div>
+                    </button>
+                    <button
+                      onClick={e => { e.stopPropagation(); setDeleteTarget(entry) }}
+                      title="Delete"
+                      style={{
+                        position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--t3)', padding: 4, borderRadius: 4,
+                        display: 'flex', alignItems: 'center',
+                        opacity: 0.6,
+                      }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
@@ -189,7 +214,7 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
             onClick={e => e.stopPropagation()}
             style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '24px 28px', maxWidth: 360, width: 'calc(100% - 32px)', boxShadow: '0 8px 40px rgba(0,0,0,0.15)' }}
           >
-            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Delete "{deleteTarget.pname}"?</div>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Delete "{deleteTarget.pname || 'Untitled'}"?</div>
             <p style={{ fontSize: 13, color: 'var(--t2)', margin: '0 0 20px', lineHeight: 1.6 }}>
               This will remove the project from your history. Any files you already downloaded won't be affected.
             </p>

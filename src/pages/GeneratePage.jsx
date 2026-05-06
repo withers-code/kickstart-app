@@ -13,7 +13,7 @@ import { genConfluencePrompt, genJiraPrompt } from '../lib/atlassianGenerators.j
 
 const PRESET_SR = THEME_PRESETS['sprint-reply']
 
-export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText, customInstructions, artefactExamples, activeHistoryEntry, onSaveHistory }) {
+export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText, customInstructions, artefactExamples, activeHistoryEntry, onSaveHistory, onUpdateSession }) {
   const [ctx, setCtx] = useState({
     pname: '', cname: '', clientContact: '', dm: '', start: '',
     method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '',
@@ -35,6 +35,11 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
     setSelected(new Set(activeHistoryEntry.artefactIds || []))
     setResults([])
   }, [activeHistoryEntry]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Live-update sidebar entry name as user types
+  useEffect(() => {
+    onUpdateSession?.({ pname: ctx.pname, cname: ctx.cname })
+  }, [ctx.pname, ctx.cname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleArt(id) {
     setSelected(s => {

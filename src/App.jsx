@@ -5,10 +5,12 @@ import GeneratePage from './pages/GeneratePage.jsx'
 import GuidePage from './pages/GuidePage.jsx'
 import SettingsPage from './pages/SettingsPage.jsx'
 import InstructionsPage from './pages/InstructionsPage.jsx'
+import WelcomePage from './pages/WelcomePage.jsx'
 import LoginScreen from './components/LoginScreen.jsx'
 import { AUTH_ENABLED, initAuth } from './lib/auth.js'
 
 const PAGE_META = {
+  welcome:      { title: 'Kickstart', desc: 'Project artefact generator' },
   generate:     { title: 'Generate documents', desc: 'Fill in context, upload a brand theme, select artefacts — download real .docx and .xlsx files' },
   instructions: { title: 'Custom instructions', desc: 'Override the default AI prompt for any artefact — saved to this browser' },
   guide:        { title: 'How to use', desc: 'Guidance on Confluence setup, Jira decomposition, and maintainer tips' },
@@ -77,12 +79,11 @@ export default function App() {
 
   // ── Project history helpers ───────────────────────────────────────────────────
   function saveToHistory({ ctx, theme, selected, results }) {
-    if (!ctx.pname) return
+    if (!activeSessionId) return
     setProjectHistory(prev => {
-      const existingIdx = prev.findIndex(e => e.id && e.pname === ctx.pname && e.cname === ctx.cname)
       const entry = {
-        id: existingIdx >= 0 ? prev[existingIdx].id : String(Date.now()),
-        pname: ctx.pname,
+        id: activeSessionId,
+        pname: ctx.pname || 'Untitled',
         cname: ctx.cname || '',
         timestamp: new Date().toISOString(),
         ctx: { ...ctx },
@@ -90,6 +91,7 @@ export default function App() {
         artefactIds: [...selected],
         generatedIds: results.filter(r => r.status === 'done' || r.status === 'prompt').map(r => r.id),
       }
+      const existingIdx = prev.findIndex(e => e.id === activeSessionId)
       if (existingIdx >= 0) {
         const updated = [...prev]
         updated[existingIdx] = entry
@@ -101,19 +103,48 @@ export default function App() {
 
   function deleteFromHistory(id) {
     setProjectHistory(prev => prev.filter(e => e.id !== id))
-    if (activeHistoryEntry?.id === id) setActiveHistoryEntry(null)
+    if (activeSessionId === id) {
+      setActiveSessionId(null)
+      setActiveHistoryEntry(null)
+      setPage('welcome')
+    }
+  }
+
+  function handleUpdateSession({ pname, cname }) {
+    if (!activeSessionId) return
+    setProjectHistory(prev => prev.map(e =>
+      e.id === activeSessionId ? { ...e, pname, cname } : e
+    ))
   }
 
   // ── UI state ──────────────────────────────────────────────────────────────────
-  const [page, setPage] = useState('generate')
+  const [page, setPage] = useState('welcome')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeHistoryEntry, setActiveHistoryEntry] = useState(null)
-  const meta = PAGE_META[page] || PAGE_META.generate
+  const [activeSessionId, setActiveSessionId] = useState(null)
+  const meta = PAGE_META[page] || PAGE_META.welcome
 
-  const handlePageChange = (newPage) => { setPage(newPage); setSidebarOpen(false) }
+  const handlePageChange = (newPage) => {
+    setPage(newPage)
+    setSidebarOpen(false)
+    if (newPage !== 'generate') {
+      setActiveSessionId(null)
+      setActiveHistoryEntry(null)
+    }
+  }
+
+  function handleNewSession() {
+    const id = String(Date.now())
+    setProjectHistory(prev => [{ id, pname: '', cname: '', timestamp: new Date().toISOString() }, ...prev])
+    setActiveSessionId(id)
+    setActiveHistoryEntry(null)
+    setPage('generate')
+    setSidebarOpen(false)
+  }
 
   function handleLoadHistory(entry) {
-    setActiveHistoryEntry(entry)
+    setActiveSessionId(entry.id)
+    setActiveHistoryEntry(entry.ctx ? entry : null)
     setPage('generate')
     setSidebarOpen(false)
   }
@@ -142,7 +173,7 @@ export default function App() {
       }} onClick={() => setSidebarOpen(false)} />
 
       <div style={{ display: 'flex' }}>
-        <Sidebar page={page} setPage={handlePageChange} sidebarOpen={sidebarOpen} account={account} onSignOut={() => setAccount(null)} history={projectHistory} activeHistoryId={activeHistoryEntry?.id} onLoadHistory={handleLoadHistory} onDeleteHistory={deleteFromHistory} />
+        <Sidebar page={page} setPage={handlePageChange} sidebarOpen={sidebarOpen} account={account} onSignOut={() => setAccount(null)} history={projectHistory} activeSessionId={activeSessionId} onNewSession={handleNewSession} onLoadHistory={handleLoadHistory} onDeleteHistory={deleteFromHistory} />
       </div>
 
       {/* Main content */}
@@ -162,7 +193,8 @@ export default function App() {
         {/* Content */}
         <div style={{ padding: 'clamp(16px, 5vw, 28px)', overflowY: 'auto', flex: 1, width: '100%' }}>
           <div style={{ maxWidth: 'min(1020px, 100%)', width: '100%', marginLeft: 'auto', marginRight: 'auto' }}>
-            {page === 'generate' && <GeneratePage apiKey={apiKey} model={model} maxTokens={maxTokens} sowText={sowText} setSowText={setSowText} customInstructions={customInstructions} artefactExamples={artefactExamples} activeHistoryEntry={activeHistoryEntry} onSaveHistory={saveToHistory} />}
+            {page === 'welcome' && <WelcomePage onNewSession={handleNewSession} />}
+            {page === 'generate' && <GeneratePage apiKey={apiKey} model={model} maxTokens={maxTokens} sowText={sowText} setSowText={setSowText} customInstructions={customInstructions} artefactExamples={artefactExamples} activeHistoryEntry={activeHistoryEntry} onSaveHistory={saveToHistory} onUpdateSession={handleUpdateSession} />}
             {page === 'instructions' && <InstructionsPage instructions={customInstructions} setInstructions={setCustomInstructions} examples={artefactExamples} setExamples={setArtefactExamples} />}
             {page === 'guide' && <GuidePage />}
             {page === 'settings' && <SettingsPage apiKey={apiKey} setApiKey={setApiKey} model={model} setModel={setModel} maxTokens={maxTokens} setMaxTokens={setMaxTokens} sowText={sowText} setSowText={setSowText} />}
