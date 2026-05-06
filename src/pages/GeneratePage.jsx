@@ -39,6 +39,9 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
       setTheme(BLANK_THEME())
       setSelected(new Set())
     }
+    // Always clear the SOW when switching sessions — it belongs to the session, not the app
+    setSowText?.('')
+    setSowFileName(null)
     setResults([])
     setPnameError(false)
   }, [activeSessionId]) // eslint-disable-line react-hooks/exhaustive-deps

@@ -143,7 +143,7 @@ function ArtefactRow({ art, instructions, examples, onSave, onReset, onUploadExa
           {/* Upload + Instructions — side by side on desktop */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }} className="responsive-form-grid">
             {/* Upload example */}
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', marginBottom: 7, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Upload example
               </div>
@@ -175,7 +175,7 @@ function ArtefactRow({ art, instructions, examples, onSave, onReset, onUploadExa
                   border: '1.5px dashed var(--border-mid)', borderRadius: 8,
                   padding: '11px 13px', cursor: uploading ? 'default' : 'pointer',
                   background: 'var(--bg)', transition: 'border-color 0.12s',
-                  height: '100%', boxSizing: 'border-box', minHeight: 56,
+                  flex: 1, boxSizing: 'border-box', minHeight: 56,
                 }}>
                   {uploading ? <Spinner size={13} /> : <Upload size={13} color="var(--t3)" style={{ flexShrink: 0 }} />}
                   <div>
