@@ -6,7 +6,7 @@ import SowUploader from '../components/SowUploader.jsx'
 import ThemePicker from '../components/ThemePicker.jsx'
 import ArtefactGrid from '../components/ArtefactGrid.jsx'
 import { ALL_ARTS, THEME_PRESETS } from '../lib/constants.js'
-import { genDocxDoD, genDocxRequirements, genDocxMeetingNotes, genDocxHandover, genDocxRetrospective, genDocxChecklist, genDocxTechSpec, genDocxUAT, genDocxClientRequest } from '../lib/docxGenerators.js'
+import { genDocxDoD, genDocxRequirements, genDocxMeetingNotes, genDocxHandover, genDocxRetrospective, genDocxChecklist, genDocxTechSpec, genDocxUAT, genDocxClientRequest, genDocxStatusReport, genDocxChangeRequest, genDocxSprintReview, genDocxLessonsLearned, genDocxProjectClosure } from '../lib/docxGenerators.js'
 import { genRAID, genStakeholder, genRACI, genProjectPlan, genDecisionLog, genCommsPlan } from '../lib/xlsxGenerators.js'
 import { genKickoffDeck, genDeliveryReport } from '../lib/pptxGenerators.js'
 import { genConfluencePrompt, genJiraPrompt } from '../lib/atlassianGenerators.js'
@@ -61,6 +61,14 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
     else setSelected(new Set(ALL_ARTS.map(a => a.id)))
   }
 
+  function bulkToggle(ids, shouldSelect) {
+    setSelected(s => {
+      const n = new Set(s)
+      ids.forEach(id => shouldSelect ? n.add(id) : n.delete(id))
+      return n
+    })
+  }
+
   const set = (field) => (e) => {
     if (field === 'pname' && e.target.value.trim()) setPnameError(false)
     setCtx(c => ({ ...c, [field]: e.target.value }))
@@ -111,7 +119,16 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
       'retrospective': genDocxRetrospective, 'project-checklist': genDocxChecklist,
       'tech-spec': genDocxTechSpec, 'uat-guide': genDocxUAT,
       'client-request': genDocxClientRequest,
+      // Delivery
+      'status-report': genDocxStatusReport,
+      'change-request': genDocxChangeRequest,
+      'sprint-review': genDocxSprintReview,
+      // Closure
+      'lessons-learned': genDocxLessonsLearned,
+      'project-closure': genDocxProjectClosure,
     }
+    // These generators are static templates — they don't call the AI
+    const staticDocx = new Set(['meeting-notes', 'retrospective', 'client-request', 'change-request', 'sprint-review'])
     const xlsxFns = {
       'raid': genRAID, 'stakeholder': genStakeholder, 'raci': genRACI,
       'project-plan': genProjectPlan, 'decision-log': genDecisionLog, 'comms-plan': genCommsPlan,
@@ -125,8 +142,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
         if (art.type === 'docx') {
           const fn = docxFns[art.id]
           if (!fn) throw new Error('Unknown docx type: ' + art.id)
-          const needsOpts = art.id !== 'meeting-notes' && art.id !== 'retrospective' && art.id !== 'client-request'
-          const buf = needsOpts ? await fn(fullCtx, opts) : await fn(fullCtx)
+          const buf = staticDocx.has(art.id) ? await fn(fullCtx) : await fn(fullCtx, opts)
           updateResult(art.id, { status: 'done', data: buf })
 
         } else if (art.type === 'xlsx') {
@@ -236,7 +252,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
       {/* 3. Artefacts */}
       <Card>
         <CardTitle icon={CheckSquare}>3 · Select artefacts</CardTitle>
-        <ArtefactGrid selected={selected} onToggle={toggleArt} onToggleAll={toggleAll} />
+        <ArtefactGrid selected={selected} onToggle={toggleArt} onToggleAll={toggleAll} onBulkToggle={bulkToggle} />
       </Card>
 
       {/* Generate */}

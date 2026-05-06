@@ -8,6 +8,13 @@ export const DOCX_ARTS = [
   { id: 'tech-spec',        name: 'Technical specification',    desc: 'HLD, architecture & design decisions',      type: 'docx' },
   { id: 'uat-guide',        name: 'UAT guide',                  desc: 'Test plan, scripts & defect log',           type: 'docx' },
   { id: 'client-request',   name: 'Client request template',    desc: 'Structured intake form for new requests',   type: 'docx' },
+  // Delivery
+  { id: 'status-report',    name: 'Weekly status report',       desc: 'RAG status, progress & next steps',         type: 'docx' },
+  { id: 'change-request',   name: 'Change request',             desc: 'Change control form & impact assessment',   type: 'docx' },
+  { id: 'sprint-review',    name: 'Sprint review',              desc: 'Demo outcomes, velocity & feedback',        type: 'docx' },
+  // Closure
+  { id: 'lessons-learned',  name: 'Lessons learned',            desc: 'What worked, what to improve next time',    type: 'docx' },
+  { id: 'project-closure',  name: 'Project closure report',     desc: 'Formal close-out with deliverables sign-off',type: 'docx' },
 ]
 
 export const XLSX_ARTS = [
@@ -31,6 +38,27 @@ export const EXT_ARTS = [
 
 export const ALL_ARTS = [...DOCX_ARTS, ...XLSX_ARTS, ...PPT_ARTS, ...EXT_ARTS]
 
+export const PHASES = [
+  {
+    id: 'initiation',
+    label: 'Initiation',
+    desc: 'Set the project up for success from day one',
+    artIds: ['kick-off-deck', 'requirements', 'dod-dor', 'tech-spec', 'raid', 'stakeholder', 'raci', 'project-plan', 'comms-plan', 'client-request', 'confluence', 'jira-sow'],
+  },
+  {
+    id: 'delivery',
+    label: 'Delivery',
+    desc: 'Track progress, manage change and keep stakeholders informed',
+    artIds: ['status-report', 'meeting-notes', 'retrospective', 'sprint-review', 'change-request', 'decision-log', 'uat-guide'],
+  },
+  {
+    id: 'closure',
+    label: 'Closure',
+    desc: 'Close out cleanly and capture knowledge for next time',
+    artIds: ['project-closure', 'lessons-learned', 'handover', 'delivery-report', 'project-checklist'],
+  },
+]
+
 export const DEFAULT_INSTRUCTIONS = {
   'dod-dor': 'Generates sprint acceptance criteria in four sections: Definition of Ready (12 criteria for when a ticket can enter a sprint), Definition of Done (14 criteria for ticket completion), Sprint Done (6 criteria for sprint closure), and Release Done (8 criteria for production deployment readiness). Criteria are tailored to your methodology and project scope.',
   'requirements': 'Generates a formal requirements document with: project purpose statement, 5–7 in-scope items, 4–5 out-of-scope items, 6 assumptions, 5-entry stakeholder register, 18 functional requirements with MoSCoW prioritisation and acceptance criteria, 8 non-functional requirements, and 5 open questions.',
@@ -51,6 +79,11 @@ export const DEFAULT_INSTRUCTIONS = {
   'delivery-report': 'Generates a 7–9 slide delivery status report. Slides cover: executive summary with RAG status, delivery progress, milestone tracker, risk & issue highlights, team updates, and next period plan.',
   'confluence': 'Generates an Atlassian Rovo prompt to create a full Confluence project space (Home, Ways of Working, Glossary, Roles & Responsibilities, Templates, Sprint Tracker, RAID Log, Decisions, Timeline), plus ready-to-paste wiki markup for the Home page as a fallback.',
   'jira-sow': 'Generates an Atlassian Rovo prompt to decompose your SoW into a full Jira backlog, plus a manual backlog and sprint plan as fallback. Produces Epics per workstream, Stories with Gherkin acceptance criteria and Fibonacci story points, Tasks, and Spikes.',
+  'status-report': 'Generates a weekly status report with overall RAG status, executive summary, progress this period (6–8 items), planned next period (5–6 items), risks & issues table (4 entries with RAG), decisions required (3 items), and milestone tracker (5 milestones with On Track / At Risk / Complete / Delayed status).',
+  'change-request': 'Produces a structured change request template (static — no AI generation) with fields for CR number, requestor, description, business justification, impact assessment across scope/schedule/cost/quality/risk/resource, options analysis table, recommendation, and approval sign-offs.',
+  'sprint-review': 'Produces a sprint review / demo template (static — no AI generation) with sprint overview, velocity & metrics table, demo outcomes table, backlog health summary, stakeholder feedback capture, and next sprint planning notes.',
+  'lessons-learned': 'Generates a lessons learned register with project summary, 6 items of what went well (area, description, impact, recommendation for next time), 6 improvement areas (issue, root cause, recommendation), key risks that materialised, process improvement recommendations, and team-level recommendations.',
+  'project-closure': 'Generates a formal project closure report with executive summary, objectives delivery table (5 objectives with Delivered / Partial / Not delivered status), key deliverables acceptance table (6 items), achievement highlights, lessons learned highlights, outstanding items for handover, and formal sign-off section.',
 }
 
 export const THEME_PRESETS = {

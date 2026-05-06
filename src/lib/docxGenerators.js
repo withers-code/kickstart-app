@@ -394,3 +394,204 @@ export async function genDocxClientRequest(ctx) {
       [['Received by',ctx.dm],['Jira ticket ID',''],['Estimated effort',''],['Target sprint',''],['Status','Triage / Accepted / Deferred / Rejected']], ctx.theme.primary),
   ], ctx.theme)
 }
+
+// ─── Delivery artefacts ───────────────────────────────────────────────────────
+
+async function fetchStatusReport(ctx, opts) {
+  return callClaudeJSON({
+    ...opts,
+    user: `Generate weekly status report content. Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope} | Team: ${ctx.team}${ctx.instructions?.['status-report'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['status-report']}` : ''}
+Return JSON: {
+  overallRag:"Green|Amber|Red",
+  executiveSummary:string,
+  progressItems:[string x6-8],
+  plannedItems:[string x5-6],
+  risks:[{risk:string,rag:"Green|Amber|Red",mitigation:string,owner:string} x4],
+  decisions:[{decision:string,owner:string,dueDate:string} x3],
+  milestones:[{milestone:string,plannedDate:string,status:"On Track|At Risk|Complete|Delayed"} x5]
+}`,
+  })
+}
+
+export async function genDocxStatusReport(ctx, opts) {
+  const d = await fetchStatusReport(ctx, opts)
+  return buildDocx([
+    h1(`Weekly Status Report — ${ctx.pname}`), space(),
+    makeTable(['Field','Value'], [2500,7026], [
+      ['Project', ctx.pname], ['Client', ctx.cname],
+      ['Report date', new Date().toLocaleDateString('en-GB')],
+      ['Reporting period', '[Week of DD/MM/YYYY]'],
+      ['Delivery manager', ctx.dm], ['Overall status', d.overallRag || 'Green'],
+    ], ctx.theme.primary), space(),
+    h2('Executive summary'), p(d.executiveSummary || ''), space(),
+    h2('Progress this period'), ...(d.progressItems || []).map(bullet), space(),
+    h2('Planned next period'), ...(d.plannedItems || []).map(bullet), space(),
+    h2('Risks & issues'),
+    makeTable(['Risk / Issue', 'RAG', 'Mitigation', 'Owner'], [3500, 900, 3500, 1626],
+      (d.risks || []).map(r => [r.risk, r.rag, r.mitigation, r.owner]), ctx.theme.primary), space(),
+    h2('Decisions required'),
+    makeTable(['Decision', 'Owner', 'Due'], [5000, 2000, 2526],
+      (d.decisions || []).map(dec => [dec.decision, dec.owner, dec.dueDate || '']), ctx.theme.primary), space(),
+    h2('Milestone tracker'),
+    makeTable(['Milestone', 'Planned date', 'Status'], [4500, 2000, 3026],
+      (d.milestones || []).map(m => [m.milestone, m.plannedDate, m.status]), ctx.theme.primary), space(),
+    h2('Distribution'),
+    makeTable(['Name', 'Role', 'Organisation'], [3000, 3000, 3526],
+      [[ctx.dm, 'Delivery Manager', 'Sprint Reply'], ['[Name]', '[Role]', ctx.cname || '[Client]']], ctx.theme.primary),
+  ], ctx.theme)
+}
+
+export async function genDocxChangeRequest(ctx) {
+  return buildDocx([
+    h1(`Change Request — ${ctx.pname}`), space(),
+    makeTable(['Field', 'Value'], [2500, 7026], [
+      ['Project', ctx.pname], ['Client', ctx.cname],
+      ['CR Number', 'CR-[XXX]'], ['Date raised', new Date().toLocaleDateString('en-GB')],
+      ['Raised by', '[NAME / ROLE]'], ['Status', 'Draft'],
+      ['Priority', 'High / Medium / Low'],
+    ], ctx.theme.primary), space(),
+    h2('1. Change description'),
+    p('[Describe the change being requested — what is changing, from what to what]'), space(),
+    h2('2. Business justification'),
+    p('[Why is this change needed? What business or delivery risk does it address?]'), space(),
+    h2('3. Impact assessment'),
+    makeTable(['Impact area', 'Detail', 'Level (High / Med / Low)'], [2500, 4500, 2526], [
+      ['Scope', '', ''], ['Schedule', '', ''], ['Cost', '', ''],
+      ['Quality / risk', '', ''], ['Dependencies', '', ''], ['Resource', '', ''],
+    ], ctx.theme.primary), space(),
+    h2('4. Options considered'),
+    makeTable(['Option', 'Description', 'Pros', 'Cons', 'Recommended?'], [800, 2800, 2000, 2000, 1926], [
+      ['1', 'Do nothing', '', '', ''],
+      ['2', '[Recommended option]', '', '', 'Yes'],
+      ['3', '[Alternative]', '', '', ''],
+    ], ctx.theme.primary), space(),
+    h2('5. Recommendation'),
+    p('[Summarise the recommended approach and rationale]'), space(),
+    h2('6. Approvals'),
+    makeTable(['Role', 'Name', 'Decision (Approve / Reject / Defer)', 'Date', 'Signature'], [2000, 2000, 2800, 1200, 1526], [
+      ['Delivery Manager', ctx.dm, '', '', ''],
+      ['Client Lead', '', '', '', ''],
+      ['Sponsor', '', '', '', ''],
+    ], ctx.theme.primary),
+  ], ctx.theme)
+}
+
+export async function genDocxSprintReview(ctx) {
+  return buildDocx([
+    h1(`Sprint Review — ${ctx.pname}`), space(),
+    makeTable(['Field', 'Value'], [2500, 7026], [
+      ['Sprint', '[SPRINT NUMBER]'], ['Project', ctx.pname], ['Client', ctx.cname],
+      ['Review date', '[DATE]'], ['Sprint goal', '[GOAL]'], ['Facilitator', ctx.dm],
+    ], ctx.theme.primary), space(),
+    h2('Sprint metrics'),
+    makeTable(['Metric', 'Planned', 'Actual'], [4500, 2000, 3026], [
+      ['Story points committed', '', ''], ['Story points completed', '', ''],
+      ['Stories completed', '', ''], ['Stories carried over', '', ''],
+      ['Bugs raised / closed', '', ''], ['Velocity vs. 3-sprint average', '', ''],
+    ], ctx.theme.primary), space(),
+    h2('Demo outcomes'),
+    makeTable(['Story / Feature', 'Demo owner', 'Outcome', 'Stakeholder feedback'], [2800, 2000, 1700, 3026], [
+      ['[Story]', '', 'Pass / Fail / Deferred', ''],
+      ['[Story]', '', '', ''],
+      ['[Story]', '', '', ''],
+    ], ctx.theme.primary), space(),
+    h2('Backlog health'),
+    makeTable(['Metric', 'Value', 'Notes'], [3000, 2000, 4526], [
+      ['Total backlog items', '', ''], ['Ready for next sprint', '', ''],
+      ['Blocked items', '', ''], ['Velocity trend (3 sprint avg)', '', ''],
+    ], ctx.theme.primary), space(),
+    h2('Stakeholder feedback'),
+    makeTable(['Feedback item', 'Raised by', 'Category', 'Action'], [3000, 2000, 2000, 2526], [
+      ['', '', 'Enhancement / Bug / Query', ''],
+      ['', '', '', ''],
+    ], ctx.theme.primary), space(),
+    h2('Next sprint planning notes'),
+    p('[Key items, priorities and constraints for the next sprint]'), space(),
+    makeTable(['#', 'Item', 'Owner', 'Priority'], [500, 5500, 2000, 1526], [
+      ['1', '', '', ''], ['2', '', '', ''], ['3', '', '', ''],
+    ], ctx.theme.primary),
+  ], ctx.theme)
+}
+
+// ─── Closure artefacts ────────────────────────────────────────────────────────
+
+async function fetchLessonsLearned(ctx, opts) {
+  return callClaudeJSON({
+    ...opts,
+    user: `Generate lessons learned content. Project: ${ctx.pname} | Client: ${ctx.cname} | Method: ${ctx.method} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['lessons-learned'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['lessons-learned']}` : ''}
+Return JSON: {
+  projectSummary:string,
+  wentWell:[{area:string,description:string,impact:string,recommendation:string} x6],
+  improvements:[{area:string,issue:string,rootCause:string,recommendation:string} x6],
+  keyRisks:[string x4],
+  processImprovements:[string x5],
+  teamRecommendations:[string x4]
+}`,
+  })
+}
+
+export async function genDocxLessonsLearned(ctx, opts) {
+  const d = await fetchLessonsLearned(ctx, opts)
+  return buildDocx([
+    h1(`Lessons Learned — ${ctx.pname}`), space(), ...docControl(ctx),
+    p('Complete at project close-out and share with your delivery practice.', { italic: true }), space(),
+    h2('1. Project summary'), p(d.projectSummary || ''), space(),
+    h2('2. What went well'),
+    makeTable(['Area', 'What worked well', 'Impact', 'Recommendation for next time'], [1800, 3000, 2000, 2726],
+      (d.wentWell || []).map(w => [w.area, w.description, w.impact, w.recommendation]), ctx.theme.primary), space(),
+    h2('3. Areas for improvement'),
+    makeTable(['Area', 'Issue', 'Root cause', 'Recommendation'], [1800, 2800, 2200, 2726],
+      (d.improvements || []).map(i => [i.area, i.issue, i.rootCause, i.recommendation]), ctx.theme.primary), space(),
+    h2('4. Key risks that materialised'), ...(d.keyRisks || []).map(bullet), space(),
+    h2('5. Process improvements recommended'), ...(d.processImprovements || []).map(bullet), space(),
+    h2('6. Team recommendations'), ...(d.teamRecommendations || []).map(bullet), space(),
+    h2('7. Sign-off'),
+    makeTable(['Role', 'Name', 'Signature', 'Date'], [3000, 2500, 2000, 2026], [
+      ['Delivery Manager', ctx.dm, '', ''],
+      ['Client Lead', '', '', ''],
+      ['Practice Lead', '', '', ''],
+    ], ctx.theme.primary),
+  ], ctx.theme)
+}
+
+async function fetchProjectClosure(ctx, opts) {
+  return callClaudeJSON({
+    ...opts,
+    user: `Generate project closure report content. Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope} | Tech: ${ctx.tech} | Team: ${ctx.team}${ctx.instructions?.['project-closure'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['project-closure']}` : ''}
+Return JSON: {
+  executiveSummary:string,
+  objectivesDelivered:[{objective:string,status:"Delivered|Partial|Not delivered",notes:string} x5],
+  keyDeliverables:[{deliverable:string,status:string,acceptedBy:string,notes:string} x6],
+  achievementHighlights:[string x5],
+  lessonsHighlights:[string x4],
+  outstandingItems:[{item:string,owner:string,targetDate:string,priority:"High|Medium|Low"} x4]
+}`,
+  })
+}
+
+export async function genDocxProjectClosure(ctx, opts) {
+  const d = await fetchProjectClosure(ctx, opts)
+  return buildDocx([
+    h1(`Project Closure Report — ${ctx.pname}`), space(), ...docControl(ctx),
+    h2('1. Executive summary'), p(d.executiveSummary || ''), space(),
+    h2('2. Objectives delivered'),
+    makeTable(['Objective', 'Status', 'Notes'], [4000, 1800, 3726],
+      (d.objectivesDelivered || []).map(o => [o.objective, o.status, o.notes]), ctx.theme.primary), space(),
+    h2('3. Key deliverables'),
+    makeTable(['Deliverable', 'Status', 'Accepted by', 'Notes'], [3200, 1500, 2000, 2826],
+      (d.keyDeliverables || []).map(del => [del.deliverable, del.status, del.acceptedBy, del.notes || '']), ctx.theme.primary), space(),
+    h2('4. Achievement highlights'), ...(d.achievementHighlights || []).map(bullet), space(),
+    h2('5. Lessons learned highlights'), ...(d.lessonsHighlights || []).map(bullet), space(),
+    h2('6. Outstanding items & handover'),
+    makeTable(['Item', 'Owner', 'Target date', 'Priority'], [4000, 2000, 1800, 1726],
+      (d.outstandingItems || []).map(o => [o.item, o.owner, o.targetDate, o.priority]), ctx.theme.primary), space(),
+    h2('7. Project sign-off'),
+    p('By signing below, all parties confirm the project is formally closed and deliverables accepted.', { italic: true }), space(),
+    makeTable(['Role', 'Name', 'Signature', 'Date'], [3000, 2500, 2000, 2026], [
+      ['Delivery Manager', ctx.dm, '', ''],
+      ['Client Sponsor', '', '', ''],
+      ['Client Lead', '', '', ''],
+      ['Practice Lead', '', '', ''],
+    ], ctx.theme.primary),
+  ], ctx.theme)
+}
