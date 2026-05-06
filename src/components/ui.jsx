@@ -6,7 +6,7 @@ export function Card({ children, className = '' }) {
       background: 'var(--surface)', border: '1px solid var(--border)',
       borderRadius: 'var(--rl2)', padding: '18px 22px',
       boxShadow: 'var(--sh)', marginBottom: 14,
-    }} className={className}>
+    }} className={`card-body${className ? ' ' + className : ''}`}>
       {children}
     </div>
   )

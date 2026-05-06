@@ -76,14 +76,14 @@ export default function GenerationBanner({ results, generating, projectSlug, onD
           <button
             title={collapsed ? 'Show artefacts' : 'Collapse'}
             onClick={() => setCollapsed(c => !c)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', display: 'flex', alignItems: 'center', padding: '4px 6px', borderRadius: 6 }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', display: 'flex', alignItems: 'center', padding: '8px', borderRadius: 6 }}
           >
             {collapsed ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
           </button>
           <button
             title="Dismiss"
             onClick={onDismiss}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', display: 'flex', alignItems: 'center', padding: '4px 6px', borderRadius: 6 }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', display: 'flex', alignItems: 'center', padding: '8px', borderRadius: 6 }}
           >
             <X size={15} />
           </button>
@@ -112,6 +112,7 @@ export default function GenerationBanner({ results, generating, projectSlug, onD
                   <button
                     title={`Download ${r.name}`}
                     onClick={() => downloadResult(r, projectSlug)}
+                    className="chip-action"
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: chipTextColor(r.status), display: 'flex', padding: 0, marginLeft: 2 }}
                   >
                     <Download size={11} />
@@ -121,6 +122,7 @@ export default function GenerationBanner({ results, generating, projectSlug, onD
                   <button
                     title="Copy Rovo prompt"
                     onClick={() => typeof r.data === 'string' && navigator.clipboard.writeText(r.data)}
+                    className="chip-action"
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: chipTextColor(r.status), display: 'flex', padding: 0 }}
                   >
                     <Copy size={11} />

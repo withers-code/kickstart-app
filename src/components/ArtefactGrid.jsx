@@ -99,17 +99,17 @@ export default function ArtefactGrid({ selected, onToggle, onToggleAll }) {
           {allSelected ? 'Deselect all' : 'Select all'}
         </button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))', gap: 7, marginBottom: 4 }}>
+      <div className="art-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))', gap: 7, marginBottom: 4 }}>
         {DOCX_ARTS.map(art => <ArtCard key={art.id} art={art} selected={selected.has(art.id)} isExt={false} onToggle={onToggle} />)}
       </div>
 
       <Divider label="Spreadsheets (.xlsx)" />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))', gap: 7, marginBottom: 4 }}>
+      <div className="art-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))', gap: 7, marginBottom: 4 }}>
         {XLSX_ARTS.map(art => <ArtCard key={art.id} art={art} selected={selected.has(art.id)} isExt={false} onToggle={onToggle} />)}
       </div>
 
       <Divider label="Presentations (.pptx)" />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))', gap: 7, marginBottom: 4 }}>
+      <div className="art-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))', gap: 7, marginBottom: 4 }}>
         {PPT_ARTS.map(art => <ArtCard key={art.id} art={art} selected={selected.has(art.id)} isExt={false} onToggle={onToggle} />)}
       </div>
 

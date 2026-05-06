@@ -79,6 +79,7 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
           {/* Generate documents — action button */}
           <button
             onClick={onNewSession}
+            className="nav-btn"
             style={{
               display: 'flex', alignItems: 'center', gap: 9,
               padding: '8px 10px', borderRadius: 8,
@@ -100,6 +101,7 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
             <button
               key={id}
               onClick={() => setPage(id)}
+              className="nav-btn"
               style={{
                 display: 'flex', alignItems: 'center', gap: 9,
                 padding: '8px 10px', borderRadius: 8,
@@ -148,6 +150,7 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
                   <div key={entry.id} style={{ position: 'relative', marginBottom: 2 }}>
                     <button
                       onClick={() => onLoadHistory?.(entry)}
+                      className="history-btn"
                       style={{
                         width: '100%', textAlign: 'left',
                         background: isActive ? 'var(--pl)' : 'transparent',

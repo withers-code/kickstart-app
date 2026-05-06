@@ -172,7 +172,7 @@ export default function App() {
         background: 'rgba(0,0,0,0.5)', zIndex: 999,
       }} onClick={() => setSidebarOpen(false)} />
 
-      <div style={{ display: 'flex' }}>
+      <div className="sidebar-wrapper">
         <Sidebar page={page} setPage={handlePageChange} sidebarOpen={sidebarOpen} account={account} onSignOut={() => setAccount(null)} history={projectHistory} activeSessionId={activeSessionId} onNewSession={handleNewSession} onLoadHistory={handleLoadHistory} onDeleteHistory={deleteFromHistory} />
       </div>
 
@@ -205,8 +205,11 @@ export default function App() {
       <style>{`
         @media (max-width: 768px) {
           .mobile-menu-btn { display: flex !important; }
-          nav { position: fixed; left: 0; top: 0; height: 100vh; z-index: 1000; transform: translateX(-100%); transition: transform 0.3s ease; }
-          nav[data-open="true"] { transform: translateX(0); }
+          /* Collapse the sidebar wrapper so it takes no space in the flex row */
+          .sidebar-wrapper { width: 0 !important; min-width: 0 !important; overflow: visible; flex-shrink: 0; }
+          /* !important overrides the inline position:sticky so the nav truly leaves the flow */
+          nav { position: fixed !important; left: 0; top: 0; height: 100vh; width: 232px !important; min-width: 232px !important; z-index: 1000; transform: translateX(-100%); transition: transform 0.3s ease; }
+          nav[data-open="true"] { transform: translateX(0) !important; }
         }
         @media (min-width: 769px) {
           .mobile-menu-btn { display: none !important; }

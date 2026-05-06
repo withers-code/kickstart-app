@@ -39,21 +39,30 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 1
 }
 
 @media (max-width: 768px) {
-  body {
-    font-size: 13px;
-  }
-
+  body { font-size: 13px; }
   code { font-size: 10px; }
 
-  /* Stack form grids on tablet */
-  .responsive-form-grid {
-    grid-template-columns: 1fr !important;
-  }
+  /* Stack form grids on mobile */
+  .responsive-form-grid { grid-template-columns: 1fr !important; }
 
-  /* Hide description on mobile */
-  .description-text {
-    display: none;
-  }
+  /* Hide description subtitle in header */
+  .description-text { display: none; }
+
+  /* Prevent iOS auto-zoom on input focus (requires >= 16px) */
+  input, select, textarea { font-size: 16px !important; }
+
+  /* Tighter card padding */
+  .card-body { padding: 14px 16px !important; }
+
+  /* Smaller minimum so artefact cards fit 2-per-row on phones */
+  .art-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; }
+
+  /* Touch-friendly sidebar buttons */
+  .nav-btn { padding: 11px 10px !important; min-height: 44px; }
+  .history-btn { padding: 10px 32px 10px 10px !important; min-height: 44px; }
+
+  /* Larger tap area for icon-only actions in generation banner chips */
+  .chip-action { padding: 5px !important; margin: -3px; }
 }
 
 @media (max-width: 480px) {
