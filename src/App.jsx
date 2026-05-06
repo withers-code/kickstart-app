@@ -33,10 +33,13 @@ export default function App() {
   // ── Auth ─────────────────────────────────────────────────────────────────────
   const [account, setAccount] = useState(null)
   const [authReady, setAuthReady] = useState(!AUTH_ENABLED)
+  const [authError, setAuthError] = useState(null)
 
   useEffect(() => {
     if (!AUTH_ENABLED) { setAuthReady(true); return }
-    initAuth().then(acct => { setAccount(acct); setAuthReady(true) }).catch(() => setAuthReady(true))
+    initAuth()
+      .then(acct => { setAccount(acct); setAuthReady(true) })
+      .catch(err => { setAuthError(err.message || 'Authentication failed'); setAuthReady(true) })
   }, [])
 
   const userId = AUTH_ENABLED ? (account?.localAccountId ?? null) : null
@@ -86,7 +89,7 @@ export default function App() {
   }
 
   if (AUTH_ENABLED && !account) {
-    return <LoginScreen onSignIn={setAccount} />
+    return <LoginScreen onSignIn={setAccount} authError={authError} />
   }
 
   // ── App shell ─────────────────────────────────────────────────────────────────

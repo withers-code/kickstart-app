@@ -22,9 +22,9 @@ function MsLogo() {
   )
 }
 
-export default function LoginScreen({ onSignIn }) {
+export default function LoginScreen({ onSignIn, authError }) {
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState(authError || null)
 
   async function handleSignIn() {
     setLoading(true)

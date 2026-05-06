@@ -38,7 +38,7 @@ async function getMsal() {
 export async function initAuth() {
   if (!AUTH_ENABLED) return null
   const msal = await getMsal()
-  const result = await msal.handleRedirectPromise().catch(() => null)
+  const result = await msal.handleRedirectPromise() // let errors bubble up
   if (result?.account) return result.account
   const accounts = msal.getAllAccounts()
   return accounts[0] ?? null
