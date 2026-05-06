@@ -24,6 +24,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
   const [selected, setSelected] = useState(new Set())
   const [results, setResults] = useState([])
   const [generating, setGenerating] = useState(false)
+  const [pnameError, setPnameError] = useState(false)
 
   const allCount = ALL_ARTS.length
 
@@ -39,6 +40,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
       setSelected(new Set())
     }
     setResults([])
+    setPnameError(false)
   }, [activeSessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Live-update sidebar entry name as user types
@@ -59,7 +61,10 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
     else setSelected(new Set(ALL_ARTS.map(a => a.id)))
   }
 
-  const set = (field) => (e) => setCtx(c => ({ ...c, [field]: e.target.value }))
+  const set = (field) => (e) => {
+    if (field === 'pname' && e.target.value.trim()) setPnameError(false)
+    setCtx(c => ({ ...c, [field]: e.target.value }))
+  }
 
   function handleSowPopulate(fields, fileName) {
     const { sowText: rawSow, ...ctxFields } = fields
@@ -83,6 +88,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
 
   async function generateAll() {
     if (!apiKey) { alert('Add your Anthropic API key in Settings first.'); return }
+    if (!ctx.pname.trim()) { setPnameError(true); document.getElementById('field-pname')?.focus(); return }
     if (selected.size === 0) { alert('Select at least one artefact.'); return }
 
     setGenerating(true)
@@ -176,8 +182,17 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
           onClear={handleSowClear}
         />
         <FormGrid cols={2} style={{ marginBottom: 10 }}>
-          <Field label="Project name *"><Input value={ctx.pname} onChange={set('pname')} placeholder="e.g. AI Smart Assistant Phase 2" /></Field>
-          <Field label="Client name *"><Input value={ctx.cname} onChange={set('cname')} placeholder="e.g. British American Tobacco" /></Field>
+          <Field label="Project name *">
+            <Input
+              id="field-pname"
+              value={ctx.pname}
+              onChange={set('pname')}
+              placeholder="e.g. AI Smart Assistant Phase 2"
+              style={pnameError ? { borderColor: 'var(--red)', boxShadow: '0 0 0 3px var(--rl)' } : undefined}
+            />
+            {pnameError && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 4 }}>Project name is required</div>}
+          </Field>
+          <Field label="Client name"><Input value={ctx.cname} onChange={set('cname')} placeholder="e.g. British American Tobacco" /></Field>
         </FormGrid>
         <FormGrid cols={3} style={{ marginBottom: 10 }}>
           <Field label="Client contact / PM"><Input value={ctx.clientContact} onChange={set('clientContact')} placeholder="Client-side PM or lead" /></Field>
