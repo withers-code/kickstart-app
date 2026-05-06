@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { FileText, Info, Settings, SlidersHorizontal, LogOut, X, Clock } from 'lucide-react'
+import { Plus, Info, Settings, SlidersHorizontal, LogOut, X, Clock } from 'lucide-react'
 import { AUTH_ENABLED, signOut } from '../lib/auth.js'
 
 const NAV = [
@@ -79,22 +79,17 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
           {/* Generate documents — action button */}
           <button
             onClick={onNewSession}
-            className="nav-btn"
             style={{
-              display: 'flex', alignItems: 'center', gap: 9,
-              padding: '8px 10px', borderRadius: 8,
-              cursor: 'pointer', fontSize: 13, fontWeight: 400,
-              color: 'var(--t2)', background: 'transparent',
-              transition: 'all 0.12s', border: 'none', width: '100%', textAlign: 'left',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+              padding: '9px 12px', borderRadius: 9,
+              cursor: 'pointer', fontSize: 13, fontWeight: 600,
+              color: '#fff', background: 'var(--purple)',
+              transition: 'all 0.12s', border: 'none', width: '100%',
+              fontFamily: "'DM Sans', sans-serif",
             }}
           >
-            <FileText size={15} />
-            <span style={{ flex: 1 }}>Generate documents</span>
-            <span style={{
-              fontSize: 12, fontWeight: 700, lineHeight: 1,
-              color: 'var(--purple)', background: 'var(--pl)',
-              borderRadius: 5, padding: '2px 6px',
-            }}>+</span>
+            <Plus size={15} strokeWidth={2.5} />
+            New document generation
           </button>
 
           {NAV.map(({ id, label, Icon }) => (
