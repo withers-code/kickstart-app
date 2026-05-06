@@ -194,7 +194,7 @@ export default function App() {
         <div style={{ padding: 'clamp(16px, 5vw, 28px)', overflowY: 'auto', flex: 1, width: '100%' }}>
           <div style={{ maxWidth: 'min(1020px, 100%)', width: '100%', marginLeft: 'auto', marginRight: 'auto' }}>
             {page === 'welcome' && <WelcomePage onNewSession={handleNewSession} />}
-            {page === 'generate' && <GeneratePage apiKey={apiKey} model={model} maxTokens={maxTokens} sowText={sowText} setSowText={setSowText} customInstructions={customInstructions} artefactExamples={artefactExamples} activeHistoryEntry={activeHistoryEntry} onSaveHistory={saveToHistory} onUpdateSession={handleUpdateSession} />}
+            {page === 'generate' && <GeneratePage apiKey={apiKey} model={model} maxTokens={maxTokens} sowText={sowText} setSowText={setSowText} customInstructions={customInstructions} artefactExamples={artefactExamples} activeHistoryEntry={activeHistoryEntry} activeSessionId={activeSessionId} onSaveHistory={saveToHistory} onUpdateSession={handleUpdateSession} />}
             {page === 'instructions' && <InstructionsPage instructions={customInstructions} setInstructions={setCustomInstructions} examples={artefactExamples} setExamples={setArtefactExamples} />}
             {page === 'guide' && <GuidePage />}
             {page === 'settings' && <SettingsPage apiKey={apiKey} setApiKey={setApiKey} model={model} setModel={setModel} maxTokens={maxTokens} setMaxTokens={setMaxTokens} sowText={sowText} setSowText={setSowText} />}

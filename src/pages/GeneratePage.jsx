@@ -13,12 +13,12 @@ import { genConfluencePrompt, genJiraPrompt } from '../lib/atlassianGenerators.j
 
 const PRESET_SR = THEME_PRESETS['sprint-reply']
 
-export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText, customInstructions, artefactExamples, activeHistoryEntry, onSaveHistory, onUpdateSession }) {
-  const [ctx, setCtx] = useState({
-    pname: '', cname: '', clientContact: '', dm: '', start: '',
-    method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '',
-  })
-  const [theme, setTheme] = useState({ presetKey: 'sprint-reply', primary: PRESET_SR.primary, secondary: PRESET_SR.secondary, accent: PRESET_SR.accent })
+const BLANK_CTX = { pname: '', cname: '', clientContact: '', dm: '', start: '', method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '' }
+const BLANK_THEME = () => ({ presetKey: 'sprint-reply', primary: PRESET_SR.primary, secondary: PRESET_SR.secondary, accent: PRESET_SR.accent })
+
+export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText, customInstructions, artefactExamples, activeHistoryEntry, activeSessionId, onSaveHistory, onUpdateSession }) {
+  const [ctx, setCtx] = useState(BLANK_CTX)
+  const [theme, setTheme] = useState(BLANK_THEME)
   const [uploadedFile, setUploadedFile] = useState(null)
   const [sowFileName, setSowFileName] = useState(null)
   const [selected, setSelected] = useState(new Set())
@@ -27,14 +27,19 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
 
   const allCount = ALL_ARTS.length
 
-  // Load context from a history entry when user clicks one in sidebar
+  // Reset or reload form whenever the active session changes
   useEffect(() => {
-    if (!activeHistoryEntry) return
-    setCtx({ ...activeHistoryEntry.ctx })
-    setTheme(activeHistoryEntry.theme || theme)
-    setSelected(new Set(activeHistoryEntry.artefactIds || []))
+    if (activeHistoryEntry) {
+      setCtx({ ...activeHistoryEntry.ctx })
+      setTheme(activeHistoryEntry.theme || BLANK_THEME())
+      setSelected(new Set(activeHistoryEntry.artefactIds || []))
+    } else {
+      setCtx(BLANK_CTX)
+      setTheme(BLANK_THEME())
+      setSelected(new Set())
+    }
     setResults([])
-  }, [activeHistoryEntry]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeSessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Live-update sidebar entry name as user types
   useEffect(() => {
@@ -69,7 +74,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
 
   function handleSowClear() {
     setSowFileName(null)
-    setCtx({ pname: '', cname: '', clientContact: '', dm: '', start: '', method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '' })
+    setCtx(BLANK_CTX)
     if (setSowText) setSowText('')
   }
 
