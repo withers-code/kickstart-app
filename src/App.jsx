@@ -76,7 +76,7 @@ export default function App() {
         {/* Content */}
         <div style={{ padding: 'clamp(16px, 5vw, 28px)', overflowY: 'auto', flex: 1, width: '100%' }}>
           <div style={{ maxWidth: 'min(1020px, 100%)', width: '100%', marginLeft: 'auto', marginRight: 'auto' }}>
-            {page === 'generate' && <GeneratePage apiKey={apiKey} model={model} maxTokens={maxTokens} sowText={sowText} />}
+            {page === 'generate' && <GeneratePage apiKey={apiKey} model={model} maxTokens={maxTokens} sowText={sowText} setSowText={setSowText} />}
             {page === 'guide' && <GuidePage />}
             {page === 'settings' && <SettingsPage apiKey={apiKey} setApiKey={setApiKey} model={model} setModel={setModel} maxTokens={maxTokens} setMaxTokens={setMaxTokens} sowText={sowText} setSowText={setSowText} />}
           </div>

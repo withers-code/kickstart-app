@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { Briefcase, Palette, CheckSquare, Zap } from 'lucide-react'
 import { Card, CardTitle, Field, Input, Select, Textarea, Btn, Alert, FormGrid } from '../components/ui.jsx'
 import InstructionsEditor from '../components/InstructionsEditor.jsx'
+import SowUploader from '../components/SowUploader.jsx'
 import ThemePicker from '../components/ThemePicker.jsx'
 import ArtefactGrid from '../components/ArtefactGrid.jsx'
 import ResultCard from '../components/ResultCard.jsx'
@@ -13,13 +14,14 @@ import { genConfluencePrompt, genJiraPrompt } from '../lib/atlassianGenerators.j
 
 const PRESET_SR = THEME_PRESETS['sprint-reply']
 
-export default function GeneratePage({ apiKey, model, maxTokens, sowText }) {
+export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText }) {
   const [ctx, setCtx] = useState({
     pname: '', cname: '', dm: '', start: '',
     method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '',
   })
   const [theme, setTheme] = useState({ presetKey: 'sprint-reply', primary: PRESET_SR.primary, secondary: PRESET_SR.secondary, accent: PRESET_SR.accent })
   const [uploadedFile, setUploadedFile] = useState(null)
+  const [sowFileName, setSowFileName] = useState(null)
   const [selected, setSelected] = useState(new Set())
   const [results, setResults] = useState([])
   const [generating, setGenerating] = useState(false)
@@ -52,6 +54,23 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText }) {
   }
 
   const set = (field) => (e) => setCtx(c => ({ ...c, [field]: e.target.value }))
+
+  function handleSowPopulate(fields, fileName) {
+    const { sowText: rawSow, ...ctxFields } = fields
+    setCtx(c => {
+      const merged = { ...c }
+      Object.entries(ctxFields).forEach(([k, v]) => { if (v) merged[k] = v })
+      return merged
+    })
+    if (rawSow && setSowText) setSowText(rawSow)
+    setSowFileName(fileName)
+  }
+
+  function handleSowClear() {
+    setSowFileName(null)
+    setCtx({ pname: '', cname: '', dm: '', start: '', method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '' })
+    if (setSowText) setSowText('')
+  }
 
   const opts = { apiKey, model: model || 'claude-sonnet-4-20250514', maxTokens: maxTokens || 4000 }
   const fullCtx = { ...ctx, sow: sowText, theme, instructions: customInstructions }
@@ -142,6 +161,13 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText }) {
       {/* 1. Context */}
       <Card>
         <CardTitle icon={Briefcase}>1 · Project context</CardTitle>
+        <SowUploader
+          opts={opts}
+          populated={!!sowFileName}
+          fileName={sowFileName}
+          onPopulate={handleSowPopulate}
+          onClear={handleSowClear}
+        />
         <FormGrid cols={2} style={{ marginBottom: 10 }}>
           <Field label="Project name *"><Input value={ctx.pname} onChange={set('pname')} placeholder="e.g. AI Smart Assistant Phase 2" /></Field>
           <Field label="Client name *"><Input value={ctx.cname} onChange={set('cname')} placeholder="e.g. British American Tobacco" /></Field>
