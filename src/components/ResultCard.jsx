@@ -17,6 +17,7 @@ export default function ResultCard({ result }) {
   function download() {
     if (type === 'docx') saveBlob(data, `${projectSlug}-${id}.docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     else if (type === 'xlsx') saveBlob(data, `${projectSlug}-${id}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    else if (type === 'pptx') saveBlob(data, `${projectSlug}-${id}.pptx`, 'application/vnd.openxmlformats-officedocument.presentationml.presentation')
     else if (type === 'prompt') saveBlob(data, `${projectSlug}-${id}.txt`, 'text/plain')
   }
 
@@ -24,7 +25,7 @@ export default function ResultCard({ result }) {
     if (typeof data === 'string') navigator.clipboard.writeText(data).then(() => {})
   }
 
-  const typeLabel = type === 'docx' ? '.docx' : type === 'xlsx' ? '.xlsx' : 'prompt'
+  const typeLabel = type === 'docx' ? '.docx' : type === 'xlsx' ? '.xlsx' : type === 'pptx' ? '.pptx' : 'prompt'
 
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--rl2)', overflow: 'hidden', boxShadow: 'var(--sh)' }}>
@@ -61,7 +62,7 @@ export default function ResultCard({ result }) {
         )}
         {status === 'done' && (
           <span style={{ color: 'var(--green)', fontWeight: 500 }}>
-            ✓ {type === 'docx' ? 'Word document' : 'Spreadsheet'} generated — {projectSlug}-{id}.{type}
+            ✓ {type === 'docx' ? 'Word document' : type === 'xlsx' ? 'Spreadsheet' : 'Presentation'} generated — {projectSlug}-{id}.{type}
           </span>
         )}
         {status === 'prompt' && (

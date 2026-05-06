@@ -1,12 +1,14 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Briefcase, Palette, CheckSquare, Zap } from 'lucide-react'
 import { Card, CardTitle, Field, Input, Select, Textarea, Btn, Alert, FormGrid } from '../components/ui.jsx'
+import InstructionsEditor from '../components/InstructionsEditor.jsx'
 import ThemePicker from '../components/ThemePicker.jsx'
 import ArtefactGrid from '../components/ArtefactGrid.jsx'
 import ResultCard from '../components/ResultCard.jsx'
-import { DOCX_ARTS, XLSX_ARTS, EXT_ARTS, ALL_ARTS, THEME_PRESETS } from '../lib/constants.js'
+import { DOCX_ARTS, XLSX_ARTS, PPT_ARTS, EXT_ARTS, ALL_ARTS, THEME_PRESETS } from '../lib/constants.js'
 import { genDocxDoD, genDocxRequirements, genDocxMeetingNotes, genDocxHandover, genDocxRetrospective, genDocxChecklist, genDocxTechSpec, genDocxUAT, genDocxClientRequest } from '../lib/docxGenerators.js'
 import { genRAID, genStakeholder, genRACI, genProjectPlan, genDecisionLog, genCommsPlan } from '../lib/xlsxGenerators.js'
+import { genKickoffDeck, genDeliveryReport } from '../lib/pptxGenerators.js'
 import { genConfluencePrompt, genJiraPrompt } from '../lib/atlassianGenerators.js'
 
 const PRESET_SR = THEME_PRESETS['sprint-reply']
@@ -21,6 +23,18 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText }) {
   const [selected, setSelected] = useState(new Set())
   const [results, setResults] = useState([])
   const [generating, setGenerating] = useState(false)
+  const [customInstructions, setCustomInstructions] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('sr_artefact_instructions') || '{}')
+    } catch {
+      return {}
+    }
+  })
+
+  // Save instructions to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('sr_artefact_instructions', JSON.stringify(customInstructions))
+  }, [customInstructions])
 
   const allCount = ALL_ARTS.length
 
@@ -40,7 +54,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText }) {
   const set = (field) => (e) => setCtx(c => ({ ...c, [field]: e.target.value }))
 
   const opts = { apiKey, model: model || 'claude-sonnet-4-20250514', maxTokens: maxTokens || 4000 }
-  const fullCtx = { ...ctx, sow: sowText, theme }
+  const fullCtx = { ...ctx, sow: sowText, theme, instructions: customInstructions }
 
   function updateResult(id, patch) {
     setResults(rs => rs.map(r => r.id === id ? { ...r, ...patch } : r))
@@ -74,6 +88,9 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText }) {
       'raid': genRAID, 'stakeholder': genStakeholder, 'raci': genRACI,
       'project-plan': genProjectPlan, 'decision-log': genDecisionLog, 'comms-plan': genCommsPlan,
     }
+    const pptxFns = {
+      'kick-off-deck': genKickoffDeck, 'delivery-report': genDeliveryReport,
+    }
 
     for (const art of arts) {
       try {
@@ -89,6 +106,12 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText }) {
           if (!fn) throw new Error('Unknown xlsx type: ' + art.id)
           const data = await fn(fullCtx, opts)
           updateResult(art.id, { status: 'done', data })
+
+        } else if (art.type === 'pptx') {
+          const fn = pptxFns[art.id]
+          if (!fn) throw new Error('Unknown pptx type: ' + art.id)
+          const buf = await fn(fullCtx, opts)
+          updateResult(art.id, { status: 'done', data: buf })
 
         } else if (art.type === 'prompt') {
           const text = art.id === 'confluence'
@@ -164,6 +187,13 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText }) {
         <CardTitle icon={CheckSquare}>3 · Select artefacts</CardTitle>
         <ArtefactGrid selected={selected} onToggle={toggleArt} onToggleAll={toggleAll} />
       </Card>
+
+      {/* 4. Custom Instructions */}
+      <InstructionsEditor
+        selected={selected}
+        instructions={customInstructions}
+        onSave={setCustomInstructions}
+      />
 
       {/* Generate */}
       <Btn full variant="primary" disabled={generating} onClick={generateAll}

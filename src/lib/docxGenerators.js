@@ -116,7 +116,7 @@ async function buildDocx(content, theme) {
 async function fetchDoD(ctx, opts) {
   return callClaudeJSON({
     ...opts,
-    user: `Generate DoD/DoR content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}
+    user: `Generate DoD/DoR content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}${ctx.instructions?.['dod-dor'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['dod-dor']}` : ''}
 Return JSON: {ready:[12 specific testable criteria strings],done:[14 criteria strings],sprintDone:[6 criteria strings],releaseDone:[8 criteria strings]}`,
   })
 }
@@ -124,7 +124,7 @@ Return JSON: {ready:[12 specific testable criteria strings],done:[14 criteria st
 async function fetchRequirements(ctx, opts) {
   return callClaudeJSON({
     ...opts,
-    user: `Generate requirements doc content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}
+    user: `Generate requirements doc content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['requirements'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['requirements']}` : ''}
 Return JSON: {purpose:string,inScope:[5-7 items],outScope:[4-5 items],assumptions:[6 items],
 stakeholders:[{name,role,requirements} x5],
 functional:[{id,category,priority(Must|Should|Could|Wont),requirement,acceptance,status} x18 items],
@@ -136,7 +136,7 @@ openQuestions:[{id,question,owner,date,resolution} x5]}`,
 async function fetchHandover(ctx, opts) {
   return callClaudeJSON({
     ...opts,
-    user: `Generate handover log content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}
+    user: `Generate handover log content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['handover'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['handover']}` : ''}
 Return JSON: {keyContacts:[{name,role,org,email,notes} x6],workstreams:[{name,status,priority,nextAction,owner} x5],topRisks:[string x3],relationshipContext:string,techNotes:string,outstandingActions:[{action,owner,due,priority} x5]}`,
   })
 }
@@ -144,7 +144,7 @@ Return JSON: {keyContacts:[{name,role,org,email,notes} x6],workstreams:[{name,st
 async function fetchChecklist(ctx, opts) {
   return callClaudeJSON({
     ...opts,
-    user: `Generate project checklist content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}
+    user: `Generate project checklist content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['project-checklist'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['project-checklist']}` : ''}
 Return JSON: {governance:[8 items],teamAccess:[8 items],requirements:[7 items],technical:[8 items],testing:[5 items],changeManagement:[5 items],preGoLive:[10 items]}`,
   })
 }
@@ -152,7 +152,7 @@ Return JSON: {governance:[8 items],teamAccess:[8 items],requirements:[7 items],t
 async function fetchTechSpec(ctx, opts) {
   return callClaudeJSON({
     ...opts,
-    user: `Generate tech spec content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}
+    user: `Generate tech spec content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['tech-spec'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['tech-spec']}` : ''}
 Return JSON: {purpose:string,architectureDesc:string,components:[{name,technology,purpose,owner} x6],decisions:[{decision,chosen,rationale,alternatives} x5],integrations:[{system,method,auth,format,owner} x4],security:[6 check items],nfrs:[{nfr,requirement,approach} x5],openQuestions:[{question,owner,date,resolution} x5]}`,
   })
 }
@@ -160,7 +160,7 @@ Return JSON: {purpose:string,architectureDesc:string,components:[{name,technolog
 async function fetchUAT(ctx, opts) {
   return callClaudeJSON({
     ...opts,
-    user: `Generate UAT guide content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}
+    user: `Generate UAT guide content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}${ctx.instructions?.['uat-guide'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['uat-guide']}` : ''}
 Return JSON: {entryCriteria:[7 items],exitCriteria:[6 items]}`,
   })
 }

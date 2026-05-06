@@ -19,12 +19,17 @@ export const XLSX_ARTS = [
   { id: 'comms-plan',   name: 'Comms plan',      desc: 'Stakeholder communication schedule',        type: 'xlsx' },
 ]
 
+export const PPT_ARTS = [
+  { id: 'kick-off-deck', name: 'Kick-off Deck', desc: 'Project kickoff presentation slides', type: 'pptx' },
+  { id: 'delivery-report', name: 'Delivery Report', desc: 'Project status & delivery slides', type: 'pptx' },
+]
+
 export const EXT_ARTS = [
   { id: 'confluence', name: 'Confluence space',    desc: 'Full baseline space — Rovo prompt + wiki markup fallback', type: 'prompt' },
   { id: 'jira-sow',   name: 'Jira tickets from SoW', desc: 'Decompose SoW into Epics / Stories / Tasks via Rovo',   type: 'prompt' },
 ]
 
-export const ALL_ARTS = [...DOCX_ARTS, ...XLSX_ARTS, ...EXT_ARTS]
+export const ALL_ARTS = [...DOCX_ARTS, ...XLSX_ARTS, ...PPT_ARTS, ...EXT_ARTS]
 
 export const THEME_PRESETS = {
   'sprint-reply': { primary: '#4F46E5', secondary: '#FFFFFF', accent: '#EEF2FF', label: 'Sprint Reply' },

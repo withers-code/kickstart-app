@@ -33,7 +33,7 @@ export async function genRAID(ctx, opts) {
   const arr = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
     system: 'You are a senior delivery manager at Sprint Reply.',
-    user: `Generate 20 RAID log entries for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}
+    user: `Generate 20 RAID log entries for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}${ctx.instructions?.['raid'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['raid']}` : ''}
 Return JSON array, each: {id,category(Risk|Assumption|Issue|Dependency),description,impact(High|Medium|Low),probability(High|Medium|Low|N/A),riskScore(High|Medium|Low|N/A),owner,mitigation,status(Open|In Progress|Closed|Accepted),dateRaised,targetClose}`,
   })
 
@@ -63,7 +63,7 @@ export async function genStakeholder(ctx, opts) {
   const arr = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
     system: 'You are a senior delivery manager at Sprint Reply.',
-    user: `Generate 14 stakeholders for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}
+    user: `Generate 14 stakeholders for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}${ctx.instructions?.['stakeholder'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['stakeholder']}` : ''}
 JSON array each: {name,role,organisation,influence(High|Medium|Low),interest(High|Medium|Low),attitude(Champion|Supporter|Neutral|Sceptic|Blocker),concerns,engagementApproach,owner,quadrant(Manage Closely|Keep Satisfied|Keep Informed|Monitor)}`,
   })
 
@@ -90,7 +90,7 @@ export async function genRACI(ctx, opts) {
   const data = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
     system: 'You are a senior delivery manager at Sprint Reply.',
-    user: `Generate RACI matrix for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}
+    user: `Generate RACI matrix for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}${ctx.instructions?.['raci'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['raci']}` : ''}
 Return JSON: {roles:[10 role names mix of client and Sprint Reply], activities:[{activity,category,raci:{roleName:"R|A|C|I|""}} x22 activities across Planning,Requirements,Design,Development,Testing,Deployment,Governance]}`,
   })
 
@@ -117,7 +117,7 @@ export async function genProjectPlan(ctx, opts) {
   const data = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
     system: 'You are a senior delivery manager at Sprint Reply.',
-    user: `Generate project plan for: Project: ${ctx.pname} | Methodology: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}
+    user: `Generate project plan for: Project: ${ctx.pname} | Methodology: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}${ctx.instructions?.['project-plan'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['project-plan']}` : ''}
 Return JSON: {phases:[{phase,startWeek,durationWeeks,milestones:[],owner,status(Not Started|In Progress|At Risk|Complete)} x6], assumptions:[string x7]}`,
   })
 
@@ -144,7 +144,7 @@ export async function genDecisionLog(ctx, opts) {
   const arr = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
     system: 'You are a senior delivery manager at Sprint Reply.',
-    user: `Generate 8 seeded decision log entries for: Project: ${ctx.pname} | Scope: ${ctx.scope}
+    user: `Generate 8 seeded decision log entries for: Project: ${ctx.pname} | Scope: ${ctx.scope}${ctx.instructions?.['decision-log'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['decision-log']}` : ''}
 JSON array each: {id,date,decision,rationale,optionsConsidered,madeBy,impact(High|Medium|Low),status(Open|Agreed|Superseded),reviewDate}`,
   })
 
@@ -161,7 +161,7 @@ export async function genCommsPlan(ctx, opts) {
   const arr = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
     system: 'You are a senior delivery manager at Sprint Reply.',
-    user: `Generate 14 communication activities for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}
+    user: `Generate 14 communication activities for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}${ctx.instructions?.['comms-plan'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['comms-plan']}` : ''}
 JSON array each: {audience,communicationType,purpose,frequency,channel,owner,format,notes}`,
   })
 

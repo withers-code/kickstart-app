@@ -1,11 +1,11 @@
 import React from 'react'
 import { Check } from 'lucide-react'
-import { DOCX_ARTS, XLSX_ARTS, EXT_ARTS } from '../lib/constants.js'
+import { DOCX_ARTS, XLSX_ARTS, PPT_ARTS, EXT_ARTS } from '../lib/constants.js'
 import { Divider } from './ui.jsx'
 import {
   Shield, Users, LayoutGrid, Calendar, Clipboard, Phone,
   CheckCircle, List, FileText, Repeat2, CheckSquare, Code, File, Send,
-  BookOpen, Layers,
+  BookOpen, Layers, Presentation, BarChart3,
 } from 'lucide-react'
 
 const ICON_MAP = {
@@ -15,6 +15,7 @@ const ICON_MAP = {
   'raid': Shield, 'stakeholder': Users, 'raci': LayoutGrid,
   'project-plan': Calendar, 'decision-log': Clipboard, 'comms-plan': Phone,
   'confluence': BookOpen, 'jira-sow': Layers,
+  'kick-off-deck': Presentation, 'delivery-report': BarChart3,
 }
 
 function ArtCard({ art, selected, isExt, onToggle }) {
@@ -83,7 +84,7 @@ function ArtCard({ art, selected, isExt, onToggle }) {
 }
 
 export default function ArtefactGrid({ selected, onToggle, onToggleAll }) {
-  const allCount = DOCX_ARTS.length + XLSX_ARTS.length + EXT_ARTS.length
+  const allCount = DOCX_ARTS.length + XLSX_ARTS.length + PPT_ARTS.length + EXT_ARTS.length
   const allSelected = selected.size === allCount
 
   return (
@@ -105,6 +106,11 @@ export default function ArtefactGrid({ selected, onToggle, onToggleAll }) {
       <Divider label="Spreadsheets (.xlsx)" />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))', gap: 7, marginBottom: 4 }}>
         {XLSX_ARTS.map(art => <ArtCard key={art.id} art={art} selected={selected.has(art.id)} isExt={false} onToggle={onToggle} />)}
+      </div>
+
+      <Divider label="Presentations (.pptx)" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))', gap: 7, marginBottom: 4 }}>
+        {PPT_ARTS.map(art => <ArtCard key={art.id} art={art} selected={selected.has(art.id)} isExt={false} onToggle={onToggle} />)}
       </div>
 
       <Divider label="Atlassian — Rovo prompts" />
