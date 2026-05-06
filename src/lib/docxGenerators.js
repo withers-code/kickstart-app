@@ -109,7 +109,7 @@ async function buildDocx(content, theme) {
     numbering: makeNumbering(),
     sections: [{ properties: pageProps(), children: content }],
   })
-  return Packer.toBuffer(doc)
+  return Packer.toBlob(doc)
 }
 
 // ─── AI Data fetchers ─────────────────────────────────────────────────────────
