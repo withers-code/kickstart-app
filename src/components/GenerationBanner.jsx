@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Download, Copy, ChevronUp, ChevronDown, Check, Zap } from 'lucide-react'
+import { Download, Copy, ChevronUp, ChevronDown, Check, Zap, RotateCcw } from 'lucide-react'
 import { Spinner } from './ui.jsx'
 
 function saveBlob(data, filename, mime) {
@@ -22,7 +22,7 @@ function StatusIcon({ status }) {
   if (status === 'working') return <Spinner size={11} />
   if (status === 'done') return <Check size={11} color="#065F46" strokeWidth={3} />
   if (status === 'prompt') return <Zap size={11} color="var(--purple)" />
-  return <X size={11} color="var(--red)" />
+  return <RotateCcw size={11} color="var(--red)" />
 }
 
 function chipStyle(status) {
@@ -39,7 +39,7 @@ function chipTextColor(status) {
   return 'var(--t2)'
 }
 
-export default function GenerationBanner({ results, generating, projectSlug }) {
+export default function GenerationBanner({ results, generating, projectSlug, onRegenerateOne }) {
   const [collapsed, setCollapsed] = useState(false)
 
   if (results.length === 0) return null
@@ -51,6 +51,10 @@ export default function GenerationBanner({ results, generating, projectSlug }) {
   const statusLine = generating
     ? `Generating… ${doneCount + errorCount} of ${results.length} complete`
     : `${doneCount} artefact${doneCount !== 1 ? 's' : ''} ready${errorCount > 0 ? ` · ${errorCount} failed` : ''}`
+
+  function retryFailed() {
+    results.filter(r => r.status === 'error').forEach(r => onRegenerateOne?.(r.id))
+  }
 
   return (
     <>
@@ -73,6 +77,20 @@ export default function GenerationBanner({ results, generating, projectSlug }) {
           <span style={{ fontSize: 13, fontWeight: 500, flex: 1, color: 'var(--text)' }}>
             {statusLine}
           </span>
+          {errorCount > 0 && !generating && (
+            <button
+              onClick={retryFailed}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 500,
+                background: 'var(--rl)', color: 'var(--red)',
+                border: '1px solid #FCA5A5', cursor: 'pointer',
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              <RotateCcw size={11} /> Retry failed
+            </button>
+          )}
           <button
             title={collapsed ? 'Show artefacts' : 'Collapse'}
             onClick={() => setCollapsed(c => !c)}
@@ -119,6 +137,16 @@ export default function GenerationBanner({ results, generating, projectSlug }) {
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: chipTextColor(r.status), display: 'flex', padding: 0 }}
                   >
                     <Copy size={11} />
+                  </button>
+                )}
+                {(r.status === 'done' || r.status === 'prompt' || r.status === 'error') && (
+                  <button
+                    title="Regenerate"
+                    onClick={() => onRegenerateOne?.(r.id)}
+                    className="chip-action"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: chipTextColor(r.status), display: 'flex', padding: 0, opacity: r.status === 'error' ? 1 : 0.5 }}
+                  >
+                    <RotateCcw size={10} />
                   </button>
                 )}
               </div>

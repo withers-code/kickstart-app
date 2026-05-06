@@ -65,7 +65,19 @@ export default function App() {
     setMaxTokens(parseInt(lsGet('sr_max_tokens', userId) || '4000'))
     setCustomInstructions(lsGetJSON('sr_artefact_instructions', userId, {}))
     setArtefactExamples(lsGetJSON('sr_artefact_examples', userId, {}))
-    setProjectHistory(lsGetJSON('sr_project_history', userId, []))
+    const savedHistory = lsGetJSON('sr_project_history', userId, [])
+    setProjectHistory(savedHistory)
+
+    // Restore last active page + session so refresh lands back where the user was
+    const savedPage = lsGet('sr_active_page', userId, 'welcome')
+    const savedSessionId = lsGet('sr_active_session', userId, '')
+    if (PAGE_META[savedPage]) setPage(savedPage)
+    if (savedSessionId && savedPage === 'generate') {
+      setActiveSessionId(savedSessionId)
+      const entry = savedHistory.find(e => e.id === savedSessionId)
+      if (entry?.ctx) setActiveHistoryEntry(entry)
+    }
+
     setStateLoaded(true)
   }, [authReady, userId])
 
@@ -76,6 +88,8 @@ export default function App() {
   useEffect(() => { if (stateLoaded) lsSet('sr_artefact_instructions', userId, JSON.stringify(customInstructions)) }, [customInstructions, stateLoaded, userId])
   useEffect(() => { if (stateLoaded) lsSet('sr_artefact_examples', userId, JSON.stringify(artefactExamples)) }, [artefactExamples, stateLoaded, userId])
   useEffect(() => { if (stateLoaded) lsSet('sr_project_history', userId, JSON.stringify(projectHistory)) }, [projectHistory, stateLoaded, userId])
+  useEffect(() => { if (stateLoaded) lsSet('sr_active_page', userId, page) }, [page, stateLoaded, userId])
+  useEffect(() => { if (stateLoaded) lsSet('sr_active_session', userId, activeSessionId || '') }, [activeSessionId, stateLoaded, userId])
 
   // ── Project history helpers ───────────────────────────────────────────────────
   function saveToHistory({ ctx, theme, selected, results }) {

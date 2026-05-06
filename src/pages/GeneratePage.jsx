@@ -95,6 +95,54 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
   const optsOpus = { apiKey, model: 'claude-opus-4-7', maxTokens: maxTokens || 4000 }
   const fullCtx = { ...ctx, sow: sowText, theme, instructions: customInstructions, examples: artefactExamples }
 
+  const docxFns = {
+    'dod-dor': genDocxDoD, 'requirements': genDocxRequirements,
+    'meeting-notes': genDocxMeetingNotes, 'handover': genDocxHandover,
+    'retrospective': genDocxRetrospective, 'project-checklist': genDocxChecklist,
+    'tech-spec': genDocxTechSpec, 'uat-guide': genDocxUAT,
+    'client-request': genDocxClientRequest,
+    'status-report': genDocxStatusReport, 'change-request': genDocxChangeRequest,
+    'sprint-review': genDocxSprintReview, 'lessons-learned': genDocxLessonsLearned,
+    'project-closure': genDocxProjectClosure,
+  }
+  const staticDocx = new Set(['meeting-notes', 'retrospective', 'client-request', 'change-request', 'sprint-review'])
+  const xlsxFns = {
+    'raid': genRAID, 'stakeholder': genStakeholder, 'raci': genRACI,
+    'project-plan': genProjectPlan, 'decision-log': genDecisionLog, 'comms-plan': genCommsPlan,
+  }
+  const pptxFns = { 'kick-off-deck': genKickoffDeck, 'delivery-report': genDeliveryReport }
+
+  async function runArt(art, updateFn) {
+    try {
+      if (art.type === 'docx') {
+        const fn = docxFns[art.id]
+        if (!fn) throw new Error('Unknown docx type: ' + art.id)
+        const buf = staticDocx.has(art.id) ? await fn(fullCtx) : await fn(fullCtx, opts)
+        updateFn(art.id, { status: 'done', data: buf })
+      } else if (art.type === 'xlsx') {
+        const fn = xlsxFns[art.id]
+        if (!fn) throw new Error('Unknown xlsx type: ' + art.id)
+        const data = await fn(fullCtx, opts)
+        updateFn(art.id, { status: 'done', data })
+      } else if (art.type === 'pptx') {
+        const fn = pptxFns[art.id]
+        if (!fn) throw new Error('Unknown pptx type: ' + art.id)
+        const buf = await fn(fullCtx, optsOpus)
+        updateFn(art.id, { status: 'done', data: buf })
+      } else if (art.type === 'prompt') {
+        const text = art.id === 'confluence'
+          ? await genConfluencePrompt(fullCtx, opts)
+          : await genJiraPrompt(fullCtx, opts)
+        updateFn(art.id, {
+          status: 'prompt', data: text,
+          previewText: text.slice(0, 600) + (text.length > 600 ? '\n\n… (full content available via Download / Copy)' : ''),
+        })
+      }
+    } catch (err) {
+      updateFn(art.id, { status: 'error', error: err.message })
+    }
+  }
+
   async function generateAll() {
     if (!apiKey) { alert('Add your Anthropic API key in Settings first.'); return }
     if (!ctx.pname.trim()) { setPnameError(true); document.getElementById('field-pname')?.focus(); return }
@@ -102,8 +150,6 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
 
     setGenerating(true)
     const arts = ALL_ARTS.filter(a => selected.has(a.id))
-
-    // Initialise all cards as 'working' — also track locally for history
     const tracked = arts.map(a => ({ id: a.id, name: a.name, type: a.type, status: 'working', projectName: ctx.pname || 'project' }))
     setResults([...tracked])
 
@@ -113,67 +159,21 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
       setResults([...tracked])
     }
 
-    // DOCX generators map
-    const docxFns = {
-      'dod-dor': genDocxDoD, 'requirements': genDocxRequirements,
-      'meeting-notes': genDocxMeetingNotes, 'handover': genDocxHandover,
-      'retrospective': genDocxRetrospective, 'project-checklist': genDocxChecklist,
-      'tech-spec': genDocxTechSpec, 'uat-guide': genDocxUAT,
-      'client-request': genDocxClientRequest,
-      // Delivery
-      'status-report': genDocxStatusReport,
-      'change-request': genDocxChangeRequest,
-      'sprint-review': genDocxSprintReview,
-      // Closure
-      'lessons-learned': genDocxLessonsLearned,
-      'project-closure': genDocxProjectClosure,
-    }
-    // These generators are static templates — they don't call the AI
-    const staticDocx = new Set(['meeting-notes', 'retrospective', 'client-request', 'change-request', 'sprint-review'])
-    const xlsxFns = {
-      'raid': genRAID, 'stakeholder': genStakeholder, 'raci': genRACI,
-      'project-plan': genProjectPlan, 'decision-log': genDecisionLog, 'comms-plan': genCommsPlan,
-    }
-    const pptxFns = {
-      'kick-off-deck': genKickoffDeck, 'delivery-report': genDeliveryReport,
-    }
-
     for (const art of arts) {
-      try {
-        if (art.type === 'docx') {
-          const fn = docxFns[art.id]
-          if (!fn) throw new Error('Unknown docx type: ' + art.id)
-          const buf = staticDocx.has(art.id) ? await fn(fullCtx) : await fn(fullCtx, opts)
-          updateResult(art.id, { status: 'done', data: buf })
-
-        } else if (art.type === 'xlsx') {
-          const fn = xlsxFns[art.id]
-          if (!fn) throw new Error('Unknown xlsx type: ' + art.id)
-          const data = await fn(fullCtx, opts)
-          updateResult(art.id, { status: 'done', data })
-
-        } else if (art.type === 'pptx') {
-          const fn = pptxFns[art.id]
-          if (!fn) throw new Error('Unknown pptx type: ' + art.id)
-          const buf = await fn(fullCtx, optsOpus)
-          updateResult(art.id, { status: 'done', data: buf })
-
-        } else if (art.type === 'prompt') {
-          const text = art.id === 'confluence'
-            ? await genConfluencePrompt(fullCtx, opts)
-            : await genJiraPrompt(fullCtx, opts)
-          updateResult(art.id, {
-            status: 'prompt', data: text,
-            previewText: text.slice(0, 600) + (text.length > 600 ? '\n\n… (full content available via Download / Copy)' : ''),
-          })
-        }
-      } catch (err) {
-        updateResult(art.id, { status: 'error', error: err.message })
-      }
+      await runArt(art, updateResult)
     }
 
     setGenerating(false)
     onSaveHistory?.({ ctx, theme, selected, results: tracked })
+  }
+
+  async function regenerateOne(artId) {
+    if (!apiKey || generating) return
+    const art = ALL_ARTS.find(a => a.id === artId)
+    if (!art) return
+    setResults(prev => prev.map(r => r.id === artId ? { ...r, status: 'working', error: undefined } : r))
+    const updateFn = (id, patch) => setResults(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r))
+    await runArt(art, updateFn)
   }
 
   return (
@@ -269,6 +269,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
         results={results}
         generating={generating}
         projectSlug={(ctx.pname || 'project').replace(/\s+/g, '-')}
+        onRegenerateOne={regenerateOne}
       />
     </div>
   )
