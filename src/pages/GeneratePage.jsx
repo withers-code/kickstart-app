@@ -92,6 +92,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
   }
 
   const opts = { apiKey, model: model || 'claude-sonnet-4-20250514', maxTokens: maxTokens || 4000 }
+  const optsOpus = { apiKey, model: 'claude-opus-4-7', maxTokens: maxTokens || 4000 }
   const fullCtx = { ...ctx, sow: sowText, theme, instructions: customInstructions, examples: artefactExamples }
 
   async function generateAll() {
@@ -154,7 +155,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
         } else if (art.type === 'pptx') {
           const fn = pptxFns[art.id]
           if (!fn) throw new Error('Unknown pptx type: ' + art.id)
-          const buf = await fn(fullCtx, opts)
+          const buf = await fn(fullCtx, optsOpus)
           updateResult(art.id, { status: 'done', data: buf })
 
         } else if (art.type === 'prompt') {
