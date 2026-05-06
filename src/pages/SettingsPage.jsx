@@ -10,14 +10,12 @@ export default function SettingsPage({ apiKey, setApiKey, model, setModel, maxTo
   function save() {
     if (!draft.trim()) return
     setApiKey(draft.trim())
-    localStorage.setItem('sr_api_key', draft.trim())
     setSaved(true)
   }
 
   function clear() {
     setApiKey('')
     setDraft('')
-    localStorage.removeItem('sr_api_key')
     setSaved(false)
   }
 

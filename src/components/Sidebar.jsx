@@ -1,5 +1,6 @@
 import React from 'react'
-import { FileText, Info, Settings, SlidersHorizontal } from 'lucide-react'
+import { FileText, Info, Settings, SlidersHorizontal, LogOut } from 'lucide-react'
+import { AUTH_ENABLED, signOut } from '../lib/auth.js'
 
 const NAV = [
   { id: 'generate', label: 'Generate documents', Icon: FileText },
@@ -24,7 +25,14 @@ function KickstartLogo({ size = 30 }) {
   )
 }
 
-export default function Sidebar({ page, setPage, sidebarOpen }) {
+export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut }) {
+  async function handleSignOut() {
+    try { await signOut(account) } catch {}
+    if (onSignOut) onSignOut()
+  }
+
+  const displayName = account?.name || account?.username || ''
+  const initials = displayName.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase() || '?'
   return (
     <nav data-open={sidebarOpen} style={{
       width: 232, minWidth: 232,
@@ -75,9 +83,24 @@ export default function Sidebar({ page, setPage, sidebarOpen }) {
       </div>
 
       {/* Footer */}
-      <div style={{ marginTop: 'auto', padding: '14px 16px', borderTop: '1px solid var(--border)', fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
-        v2.0 · May 2026<br />
-        Project artefact generator
+      <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border)' }}>
+        {AUTH_ENABLED && account && (
+          <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--pl)', color: 'var(--purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+              {initials}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
+              <div style={{ fontSize: 10, color: 'var(--t3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{account.username}</div>
+            </div>
+            <button onClick={handleSignOut} title="Sign out" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', padding: 4, display: 'flex', alignItems: 'center', borderRadius: 6, flexShrink: 0 }}>
+              <LogOut size={14} />
+            </button>
+          </div>
+        )}
+        <div style={{ padding: '8px 16px 14px', fontSize: 11, color: 'var(--t3)' }}>
+          v2.0 · May 2026
+        </div>
       </div>
     </nav>
   )

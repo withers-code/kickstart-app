@@ -6,9 +6,9 @@ const EXTRACT_PROMPT = `Extract project context from this Statement of Work docu
 Return JSON with exactly these keys (use empty string "" if not found):
 {
   "pname": "project name",
-  "cname": "client / company name",
-  "dm": "delivery manager or project manager name",
-  "start": "project start date in YYYY-MM-DD format or empty string",
+  "cname": "client / company name (the organisation paying for the work, not the consulting firm)",
+  "clientContact": "client-side project manager or primary contact name — someone who works for the client, NOT the delivery consultant or anyone from the consulting team",
+  "start": "project start date — look for 'commencement date', 'start date', 'kick-off date', or a specific date mentioned as when the project begins. Return in YYYY-MM-DD format, or empty string if genuinely not found. Do NOT return contract signing dates or document dates.",
   "method": "one of: Agile Scrum | Agile Kanban | Hybrid (Agile + Waterfall) | Waterfall / Phased",
   "sprint": "one of: 1 week | 2 weeks | 3 weeks | 4 weeks",
   "team": "team size and composition summary",

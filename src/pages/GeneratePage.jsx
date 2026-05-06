@@ -15,7 +15,7 @@ const PRESET_SR = THEME_PRESETS['sprint-reply']
 
 export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText, customInstructions, artefactExamples }) {
   const [ctx, setCtx] = useState({
-    pname: '', cname: '', dm: '', start: '',
+    pname: '', cname: '', clientContact: '', dm: '', start: '',
     method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '',
   })
   const [theme, setTheme] = useState({ presetKey: 'sprint-reply', primary: PRESET_SR.primary, secondary: PRESET_SR.secondary, accent: PRESET_SR.accent })
@@ -55,7 +55,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
 
   function handleSowClear() {
     setSowFileName(null)
-    setCtx({ pname: '', cname: '', dm: '', start: '', method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '' })
+    setCtx({ pname: '', cname: '', clientContact: '', dm: '', start: '', method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '' })
     if (setSowText) setSowText('')
   }
 
@@ -144,7 +144,10 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
 
       {/* 1. Context */}
       <Card>
-        <CardTitle icon={Briefcase}>1 · Project context</CardTitle>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <CardTitle icon={Briefcase}>1 · Project context</CardTitle>
+          <button onClick={handleSowClear} style={{ fontSize: 12, color: 'var(--t3)', background: 'none', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer', padding: '4px 10px', lineHeight: 1.4, marginTop: 0 }}>Clear form</button>
+        </div>
         <SowUploader
           opts={opts}
           populated={!!sowFileName}
@@ -155,7 +158,10 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
         <FormGrid cols={2} style={{ marginBottom: 10 }}>
           <Field label="Project name *"><Input value={ctx.pname} onChange={set('pname')} placeholder="e.g. AI Smart Assistant Phase 2" /></Field>
           <Field label="Client name *"><Input value={ctx.cname} onChange={set('cname')} placeholder="e.g. British American Tobacco" /></Field>
-          <Field label="Delivery manager"><Input value={ctx.dm} onChange={set('dm')} placeholder="Full name" /></Field>
+        </FormGrid>
+        <FormGrid cols={3} style={{ marginBottom: 10 }}>
+          <Field label="Client contact / PM"><Input value={ctx.clientContact} onChange={set('clientContact')} placeholder="Client-side PM or lead" /></Field>
+          <Field label="Delivery manager"><Input value={ctx.dm} onChange={set('dm')} placeholder="Your name" /></Field>
           <Field label="Project start date"><Input type="date" value={ctx.start} onChange={set('start')} /></Field>
         </FormGrid>
         <FormGrid cols={3} style={{ marginBottom: 10 }}>
