@@ -88,8 +88,6 @@ export default function App() {
   useEffect(() => { if (stateLoaded) lsSet('sr_artefact_instructions', userId, JSON.stringify(customInstructions)) }, [customInstructions, stateLoaded, userId])
   useEffect(() => { if (stateLoaded) lsSet('sr_artefact_examples', userId, JSON.stringify(artefactExamples)) }, [artefactExamples, stateLoaded, userId])
   useEffect(() => { if (stateLoaded) lsSet('sr_project_history', userId, JSON.stringify(projectHistory)) }, [projectHistory, stateLoaded, userId])
-  useEffect(() => { if (stateLoaded) lsSet('sr_active_page', userId, page) }, [page, stateLoaded, userId])
-  useEffect(() => { if (stateLoaded) lsSet('sr_active_session', userId, activeSessionId || '') }, [activeSessionId, stateLoaded, userId])
 
   // ── Project history helpers ───────────────────────────────────────────────────
   function saveToHistory({ ctx, theme, selected, results }) {
@@ -137,6 +135,10 @@ export default function App() {
   const [activeHistoryEntry, setActiveHistoryEntry] = useState(null)
   const [activeSessionId, setActiveSessionId] = useState(null)
   const meta = PAGE_META[page] || PAGE_META.welcome
+
+  // Persist active page/session (must be after UI state declarations)
+  useEffect(() => { if (stateLoaded) lsSet('sr_active_page', userId, page) }, [page, stateLoaded, userId])
+  useEffect(() => { if (stateLoaded) lsSet('sr_active_session', userId, activeSessionId || '') }, [activeSessionId, stateLoaded, userId])
 
   const handlePageChange = (newPage) => {
     setPage(newPage)
