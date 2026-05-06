@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Download, Copy, ChevronUp, ChevronDown, Check, Zap } from 'lucide-react'
+import { Download, Copy, ChevronUp, ChevronDown, Check, Zap } from 'lucide-react'
 import { Spinner } from './ui.jsx'
 
 function saveBlob(data, filename, mime) {
@@ -39,7 +39,7 @@ function chipTextColor(status) {
   return 'var(--t2)'
 }
 
-export default function GenerationBanner({ results, generating, projectSlug, onDismiss }) {
+export default function GenerationBanner({ results, generating, projectSlug }) {
   const [collapsed, setCollapsed] = useState(false)
 
   if (results.length === 0) return null
@@ -79,13 +79,6 @@ export default function GenerationBanner({ results, generating, projectSlug, onD
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', display: 'flex', alignItems: 'center', padding: '8px', borderRadius: 6 }}
           >
             {collapsed ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-          </button>
-          <button
-            title="Dismiss"
-            onClick={onDismiss}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', display: 'flex', alignItems: 'center', padding: '8px', borderRadius: 6 }}
-          >
-            <X size={15} />
           </button>
         </div>
 

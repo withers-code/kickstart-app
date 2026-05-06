@@ -1,20 +1,78 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
+import JSZip from 'jszip'
 import { Paperclip, X } from 'lucide-react'
 import { THEME_PRESETS } from '../lib/constants.js'
 import { Field, FormGrid, Input } from './ui.jsx'
+import { Spinner } from './ui.jsx'
+
+async function extractPptxThemeColors(file) {
+  const buf = await file.arrayBuffer()
+  const zip = await JSZip.loadAsync(buf)
+
+  // Theme XML is typically at ppt/theme/theme1.xml
+  const themeEntry = zip.file('ppt/theme/theme1.xml')
+  if (!themeEntry) return null
+
+  const xml = await themeEntry.async('string')
+
+  function pick(tag) {
+    // Match <a:TAG ...><a:srgbClr val="XXXXXX"/>
+    const m = xml.match(new RegExp(`<a:${tag}[^>]*>\\s*<a:srgbClr val="([0-9A-Fa-f]{6})"`, 'i'))
+    if (m) return '#' + m[1].toUpperCase()
+    // Also try sysClr lastClr attribute
+    const m2 = xml.match(new RegExp(`<a:${tag}[^>]*>\\s*<a:sysClr[^>]+lastClr="([0-9A-Fa-f]{6})"`, 'i'))
+    if (m2) return '#' + m2[1].toUpperCase()
+    return null
+  }
+
+  return {
+    primary:   pick('accent1'),
+    secondary: pick('dk2') || pick('accent2'),
+    accent:    pick('accent2'),
+  }
+}
 
 export default function ThemePicker({ theme, setTheme, uploadedFile, setUploadedFile }) {
   const fileRef = useRef()
+  const [extracting, setExtracting] = useState(false)
+  const [extractError, setExtractError] = useState(null)
 
   function selectPreset(key) {
     const p = THEME_PRESETS[key]
     setTheme({ ...theme, presetKey: key, primary: p.primary, secondary: p.secondary, accent: p.accent })
   }
 
-  function handleFile(file) {
+  async function handleFile(file) {
     if (!file) return
     setUploadedFile(file)
-    setTheme(t => ({ ...t, presetKey: 'custom', fileName: file.name }))
+    setExtractError(null)
+
+    if (/\.(pptx|potx)$/i.test(file.name)) {
+      setExtracting(true)
+      try {
+        const colors = await extractPptxThemeColors(file)
+        if (colors?.primary) {
+          setTheme(t => ({
+            ...t,
+            presetKey: 'custom',
+            fileName: file.name,
+            primary:   colors.primary,
+            secondary: colors.secondary || t.secondary,
+            accent:    colors.accent    || t.accent,
+          }))
+        } else {
+          setTheme(t => ({ ...t, presetKey: 'custom', fileName: file.name }))
+          setExtractError('No theme colours found in this file — set them manually below.')
+        }
+      } catch {
+        setTheme(t => ({ ...t, presetKey: 'custom', fileName: file.name }))
+        setExtractError('Could not read theme colours — set them manually below.')
+      } finally {
+        setExtracting(false)
+      }
+    } else {
+      setTheme(t => ({ ...t, presetKey: 'custom', fileName: file.name }))
+    }
   }
 
   function handleDrop(e) {
@@ -67,14 +125,14 @@ export default function ThemePicker({ theme, setTheme, uploadedFile, setUploaded
       <FormGrid cols={2}>
         {/* Upload zone */}
         <div>
-          <Field label="Upload PowerPoint theme (.pptx / .potx)">
+          <Field label="Upload PowerPoint theme (.pptx / .potx) — colours auto-extracted">
             <div
               onDragOver={e => e.preventDefault()}
               onDrop={handleDrop}
-              onClick={() => fileRef.current?.click()}
+              onClick={() => !extracting && fileRef.current?.click()}
               style={{
                 border: '2px dashed var(--border-mid)', borderRadius: 10,
-                padding: 16, textAlign: 'center', cursor: 'pointer',
+                padding: 16, textAlign: 'center', cursor: extracting ? 'default' : 'pointer',
                 transition: 'all 0.15s', background: 'var(--bg)',
                 position: 'relative', overflow: 'hidden', marginTop: 4,
               }}
@@ -82,12 +140,16 @@ export default function ThemePicker({ theme, setTheme, uploadedFile, setUploaded
               <input ref={fileRef} type="file" accept=".pptx,.potx,.ppt" style={{ display: 'none' }}
                 onChange={e => handleFile(e.target.files[0])} />
               <div style={{ fontSize: 22, marginBottom: 5 }}>📎</div>
-              {uploadedFile ? (
+              {extracting ? (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--t2)' }}>
+                  <Spinner size={12} /> Extracting theme colours…
+                </div>
+              ) : uploadedFile ? (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--gl)', color: 'var(--green)', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500 }}>
                   <Paperclip size={12} />
                   {uploadedFile.name}
                   <button
-                    onClick={e => { e.stopPropagation(); setUploadedFile(null) }}
+                    onClick={e => { e.stopPropagation(); setUploadedFile(null); setExtractError(null) }}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--green)', lineHeight: 1, padding: 0 }}
                   >
                     <X size={14} />
@@ -100,6 +162,12 @@ export default function ThemePicker({ theme, setTheme, uploadedFile, setUploaded
                 </>
               )}
             </div>
+            {extractError && <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 5 }}>{extractError}</div>}
+            {uploadedFile && !extracting && !extractError && (
+              <div style={{ fontSize: 11, color: 'var(--green)', marginTop: 5 }}>
+                Theme colours extracted and applied below.
+              </div>
+            )}
           </Field>
         </div>
 

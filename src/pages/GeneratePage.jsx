@@ -268,7 +268,6 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
         results={results}
         generating={generating}
         projectSlug={(ctx.pname || 'project').replace(/\s+/g, '-')}
-        onDismiss={() => setResults([])}
       />
     </div>
   )
