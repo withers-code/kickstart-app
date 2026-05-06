@@ -172,7 +172,10 @@ export function FormGrid({ cols = 2, children, style }) {
       display: 'grid',
       gridTemplateColumns: `repeat(${cols}, 1fr)`,
       gap: 10, marginBottom: 10, ...style,
-    }}>
+    }}
+    className="responsive-form-grid"
+    data-cols={cols}
+    >
       {children}
     </div>
   )

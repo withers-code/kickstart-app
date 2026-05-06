@@ -30,3 +30,42 @@ code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 1
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 0.65s linear infinite; }
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .responsive-form-grid[data-cols="3"] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    font-size: 13px;
+  }
+
+  code { font-size: 10px; }
+
+  /* Stack form grids on tablet */
+  .responsive-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Hide description on mobile */
+  .description-text {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 12px;
+  }
+
+  code { font-size: 9px; }
+
+  /* Smaller padding on very small screens */
+  .responsive-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+}

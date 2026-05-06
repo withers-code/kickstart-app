@@ -7,9 +7,9 @@ const NAV = [
   { id: 'settings', label: 'API & settings', Icon: Settings },
 ]
 
-export default function Sidebar({ page, setPage }) {
+export default function Sidebar({ page, setPage, sidebarOpen }) {
   return (
-    <nav style={{
+    <nav data-open={sidebarOpen} style={{
       width: 232, minWidth: 232,
       background: 'var(--surface)',
       borderRight: '1px solid var(--border)',
@@ -71,3 +71,4 @@ export default function Sidebar({ page, setPage }) {
     </nav>
   )
 }
+
