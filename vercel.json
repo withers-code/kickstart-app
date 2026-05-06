@@ -1,7 +1,4 @@
 {
-  "buildCommand": "npm run build",
-  "framework": "vite",
-  "nodeVersion": "20",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "headers": [
     {
