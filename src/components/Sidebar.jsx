@@ -1,8 +1,9 @@
 import React from 'react'
-import { Zap, FileText, Info, Settings } from 'lucide-react'
+import { Zap, FileText, Info, Settings, SlidersHorizontal } from 'lucide-react'
 
 const NAV = [
   { id: 'generate', label: 'Generate documents', Icon: FileText },
+  { id: 'instructions', label: 'Custom instructions', Icon: SlidersHorizontal },
   { id: 'guide', label: 'How to use', Icon: Info },
   { id: 'settings', label: 'API & settings', Icon: Settings },
 ]

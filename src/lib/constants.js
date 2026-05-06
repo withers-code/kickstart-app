@@ -31,6 +31,28 @@ export const EXT_ARTS = [
 
 export const ALL_ARTS = [...DOCX_ARTS, ...XLSX_ARTS, ...PPT_ARTS, ...EXT_ARTS]
 
+export const DEFAULT_INSTRUCTIONS = {
+  'dod-dor': 'Generates sprint acceptance criteria in four sections: Definition of Ready (12 criteria for when a ticket can enter a sprint), Definition of Done (14 criteria for ticket completion), Sprint Done (6 criteria for sprint closure), and Release Done (8 criteria for production deployment readiness). Criteria are tailored to your methodology and project scope.',
+  'requirements': 'Generates a formal requirements document with: project purpose statement, 5–7 in-scope items, 4–5 out-of-scope items, 6 assumptions, 5-entry stakeholder register, 18 functional requirements with MoSCoW prioritisation and acceptance criteria, 8 non-functional requirements, and 5 open questions.',
+  'meeting-notes': 'Produces a reusable meeting notes template (static — no AI generation) with: document control table, attendee register, agenda table, notes sections, decisions log, and actions tracker. Copy and complete for each meeting.',
+  'handover': 'Generates a project handover document with: 6 key contacts, 5 open workstreams with RAG status, active risks summary, relationship context notes, technical handover notes, and 5 outstanding actions.',
+  'retrospective': 'Produces a sprint retrospective template (static — no AI generation) with: sprint metrics table, Start / Stop / Continue sections with action tracking, and a team health check scorecard across 5 dimensions.',
+  'project-checklist': 'Generates a pre-go-live readiness checklist across 7 categories: governance & setup (8 items), team & access (8), requirements (7), technical readiness (8), testing & quality (5), change management (5), and pre-go-live (10 items).',
+  'tech-spec': 'Generates a technical specification with: purpose statement, high-level architecture description, 6 system components, 5 architectural decisions with rationale, 4 integrations, 6 security considerations, 5 NFRs, and 5 open questions.',
+  'uat-guide': 'Generates a UAT guide with: overview table, roles & responsibilities, 7 entry criteria, 6 exit criteria, test script template, defect severity SLA table, and a sign-off section.',
+  'client-request': 'Produces a structured client request intake form (static — no AI generation) with fields for request type, description, business justification, acceptance criteria in Gherkin format, and stakeholder approvals.',
+  'raid': 'Generates 20 RAID log entries across Risks, Assumptions, Issues, and Dependencies. Each entry includes impact, probability, risk score, owner, mitigation action, status, and target close date. Includes a summary totals sheet.',
+  'stakeholder': 'Generates 14 stakeholders mapped to a power/interest grid. Each entry includes influence, interest, attitude (Champion → Blocker), engagement approach, and quadrant assignment. Includes a grid summary sheet.',
+  'raci': 'Generates a RACI matrix with 10 roles and 22 activities across Planning, Requirements, Design, Development, Testing, Deployment, and Governance phases. Includes a legend sheet.',
+  'project-plan': 'Generates a 6-phase project plan with start week, duration, key milestones, owner, and status for each phase. Includes a planning assumptions sheet.',
+  'decision-log': 'Generates 8 pre-seeded decision log entries relevant to your project scope, each with date, decision, rationale, options considered, decision maker, impact level, status, and review date.',
+  'comms-plan': 'Generates 14 communication activities covering key audiences, communication types, purpose, frequency, channel, owner, format, and notes.',
+  'kick-off-deck': 'Generates an 8–10 slide kick-off presentation. Slides cover: project overview, objectives & scope, team introductions, delivery methodology, timeline, risks & dependencies, ways of working, and next steps.',
+  'delivery-report': 'Generates a 7–9 slide delivery status report. Slides cover: executive summary with RAG status, delivery progress, milestone tracker, risk & issue highlights, team updates, and next period plan.',
+  'confluence': 'Generates an Atlassian Rovo prompt to create a full Confluence project space (Home, Ways of Working, Glossary, Roles & Responsibilities, Templates, Sprint Tracker, RAID Log, Decisions, Timeline), plus ready-to-paste wiki markup for the Home page as a fallback.',
+  'jira-sow': 'Generates an Atlassian Rovo prompt to decompose your SoW into a full Jira backlog, plus a manual backlog and sprint plan as fallback. Produces Epics per workstream, Stories with Gherkin acceptance criteria and Fibonacci story points, Tasks, and Spikes.',
+}
+
 export const THEME_PRESETS = {
   'sprint-reply': { primary: '#4F46E5', secondary: '#FFFFFF', accent: '#EEF2FF', label: 'Sprint Reply' },
   'midnight':     { primary: '#1E2761', secondary: '#CADCFC', accent: '#F0F4FF', label: 'Midnight blue' },

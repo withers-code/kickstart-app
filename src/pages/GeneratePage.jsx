@@ -1,12 +1,11 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Briefcase, Palette, CheckSquare, Zap } from 'lucide-react'
 import { Card, CardTitle, Field, Input, Select, Textarea, Btn, Alert, FormGrid } from '../components/ui.jsx'
-import InstructionsEditor from '../components/InstructionsEditor.jsx'
+import GenerationBanner from '../components/GenerationBanner.jsx'
 import SowUploader from '../components/SowUploader.jsx'
 import ThemePicker from '../components/ThemePicker.jsx'
 import ArtefactGrid from '../components/ArtefactGrid.jsx'
-import ResultCard from '../components/ResultCard.jsx'
-import { DOCX_ARTS, XLSX_ARTS, PPT_ARTS, EXT_ARTS, ALL_ARTS, THEME_PRESETS } from '../lib/constants.js'
+import { ALL_ARTS, THEME_PRESETS } from '../lib/constants.js'
 import { genDocxDoD, genDocxRequirements, genDocxMeetingNotes, genDocxHandover, genDocxRetrospective, genDocxChecklist, genDocxTechSpec, genDocxUAT, genDocxClientRequest } from '../lib/docxGenerators.js'
 import { genRAID, genStakeholder, genRACI, genProjectPlan, genDecisionLog, genCommsPlan } from '../lib/xlsxGenerators.js'
 import { genKickoffDeck, genDeliveryReport } from '../lib/pptxGenerators.js'
@@ -14,7 +13,7 @@ import { genConfluencePrompt, genJiraPrompt } from '../lib/atlassianGenerators.j
 
 const PRESET_SR = THEME_PRESETS['sprint-reply']
 
-export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText }) {
+export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText, customInstructions }) {
   const [ctx, setCtx] = useState({
     pname: '', cname: '', dm: '', start: '',
     method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '',
@@ -25,18 +24,6 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
   const [selected, setSelected] = useState(new Set())
   const [results, setResults] = useState([])
   const [generating, setGenerating] = useState(false)
-  const [customInstructions, setCustomInstructions] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('sr_artefact_instructions') || '{}')
-    } catch {
-      return {}
-    }
-  })
-
-  // Save instructions to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('sr_artefact_instructions', JSON.stringify(customInstructions))
-  }, [customInstructions])
 
   const allCount = ALL_ARTS.length
 
@@ -91,9 +78,6 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
       id: a.id, name: a.name, type: a.type, status: 'working',
       projectName: ctx.pname || 'project',
     })))
-
-    // Scroll to results
-    setTimeout(() => document.getElementById('results-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
 
     // DOCX generators map
     const docxFns = {
@@ -214,13 +198,6 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
         <ArtefactGrid selected={selected} onToggle={toggleArt} onToggleAll={toggleAll} />
       </Card>
 
-      {/* 4. Custom Instructions */}
-      <InstructionsEditor
-        selected={selected}
-        instructions={customInstructions}
-        onSave={setCustomInstructions}
-      />
-
       {/* Generate */}
       <Btn full variant="primary" disabled={generating} onClick={generateAll}
         style={{ padding: '12px 16px', fontSize: 14, marginBottom: 16 }}>
@@ -230,18 +207,12 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
         }
       </Btn>
 
-      {/* Results */}
-      {results.length > 0 && (
-        <div>
-          <div id="results-anchor" style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--t3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Generated artefacts
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {results.map(r => <ResultCard key={r.id} result={r} />)}
-          </div>
-        </div>
-      )}
+      <GenerationBanner
+        results={results}
+        generating={generating}
+        projectSlug={(ctx.pname || 'project').replace(/\s+/g, '-')}
+        onDismiss={() => setResults([])}
+      />
     </div>
   )
 }

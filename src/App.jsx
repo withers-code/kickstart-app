@@ -1,14 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
 import Sidebar from './components/Sidebar.jsx'
 import GeneratePage from './pages/GeneratePage.jsx'
 import GuidePage from './pages/GuidePage.jsx'
 import SettingsPage from './pages/SettingsPage.jsx'
+import InstructionsPage from './pages/InstructionsPage.jsx'
 
 const PAGE_META = {
-  generate: { title: 'Generate documents', desc: 'Fill in context, upload a brand theme, select artefacts — download real .docx and .xlsx files' },
-  guide:    { title: 'How to use', desc: 'Guidance on Confluence setup, Jira decomposition, and maintainer tips' },
-  settings: { title: 'API & settings', desc: 'API key, model preferences, and Statement of Work' },
+  generate:     { title: 'Generate documents', desc: 'Fill in context, upload a brand theme, select artefacts — download real .docx and .xlsx files' },
+  instructions: { title: 'Custom instructions', desc: 'Override the default AI prompt for any artefact — saved to this browser' },
+  guide:        { title: 'How to use', desc: 'Guidance on Confluence setup, Jira decomposition, and maintainer tips' },
+  settings:     { title: 'API & settings', desc: 'API key, model preferences, and Statement of Work' },
 }
 
 export default function App() {
@@ -18,6 +20,13 @@ export default function App() {
   const [maxTokens, setMaxTokens] = useState(4000)
   const [sowText, setSowText] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [customInstructions, setCustomInstructions] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('sr_artefact_instructions') || '{}') } catch { return {} }
+  })
+
+  useEffect(() => {
+    localStorage.setItem('sr_artefact_instructions', JSON.stringify(customInstructions))
+  }, [customInstructions])
   const meta = PAGE_META[page] || PAGE_META.generate
 
   const handlePageChange = (newPage) => {
@@ -76,7 +85,8 @@ export default function App() {
         {/* Content */}
         <div style={{ padding: 'clamp(16px, 5vw, 28px)', overflowY: 'auto', flex: 1, width: '100%' }}>
           <div style={{ maxWidth: 'min(1020px, 100%)', width: '100%', marginLeft: 'auto', marginRight: 'auto' }}>
-            {page === 'generate' && <GeneratePage apiKey={apiKey} model={model} maxTokens={maxTokens} sowText={sowText} setSowText={setSowText} />}
+            {page === 'generate' && <GeneratePage apiKey={apiKey} model={model} maxTokens={maxTokens} sowText={sowText} setSowText={setSowText} customInstructions={customInstructions} />}
+            {page === 'instructions' && <InstructionsPage instructions={customInstructions} setInstructions={setCustomInstructions} />}
             {page === 'guide' && <GuidePage />}
             {page === 'settings' && <SettingsPage apiKey={apiKey} setApiKey={setApiKey} model={model} setModel={setModel} maxTokens={maxTokens} setMaxTokens={setMaxTokens} sowText={sowText} setSowText={setSowText} />}
           </div>
@@ -93,6 +103,7 @@ export default function App() {
         @media (min-width: 769px) {
           .mobile-menu-btn { display: none !important; }
           nav { position: sticky !important; transform: none !important; width: 232px !important; min-width: 232px !important; }
+          .gen-banner { left: 232px !important; }
         }
       `}</style>
     </div>
