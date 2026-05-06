@@ -3,9 +3,9 @@ import { callClaude } from './api.js'
 export async function genConfluencePrompt(ctx, opts) {
   return callClaude({
     ...opts,
-    system: 'You are a senior delivery manager at Sprint Reply. Generate detailed Atlassian Rovo prompts and Confluence wiki markup.',
+    system: 'You are a senior delivery manager at Kickstart. Generate detailed Atlassian Rovo prompts and Confluence wiki markup.',
     user: `Create an Atlassian Rovo prompt to build a full Confluence project space for:
-Project: ${ctx.pname} | Client: ${ctx.cname} | DM: ${ctx.dm} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}${ctx.instructions?.['confluence'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['confluence']}` : ''}
+Project: ${ctx.pname} | Client: ${ctx.cname} | DM: ${ctx.dm} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}${ctx.instructions?.['confluence'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['confluence']}` : ''}${ctx.examples?.['confluence']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['confluence'].text.slice(0, 4000)}` : ''}
 
 SECTION 1 — ROVO PROMPT (copy into Atlassian Rovo):
 Write a complete Rovo prompt that creates these pages with full content:
@@ -31,9 +31,9 @@ export async function genJiraPrompt(ctx, opts) {
 
   return callClaude({
     ...opts,
-    system: 'You are a senior BA at Sprint Reply. Generate Atlassian Rovo prompts and Jira backlogs.',
+    system: 'You are a senior BA at Kickstart. Generate Atlassian Rovo prompts and Jira backlogs.',
     user: `Create an Atlassian Rovo prompt to build a full Jira backlog for:
-Project: ${ctx.pname} | Client: ${ctx.cname} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}${sowSection}${ctx.instructions?.['jira-sow'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['jira-sow']}` : ''}
+Project: ${ctx.pname} | Client: ${ctx.cname} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}${sowSection}${ctx.instructions?.['jira-sow'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['jira-sow']}` : ''}${ctx.examples?.['jira-sow']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['jira-sow'].text.slice(0, 4000)}` : ''}
 
 SECTION 1 — ROVO PROMPT:
 Rovo should create: Epics (one per workstream), Stories ("As a [persona], I want [action] so that [benefit]"), Tasks, Spikes.

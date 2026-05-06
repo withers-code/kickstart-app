@@ -54,7 +54,7 @@ export const DEFAULT_INSTRUCTIONS = {
 }
 
 export const THEME_PRESETS = {
-  'sprint-reply': { primary: '#4F46E5', secondary: '#FFFFFF', accent: '#EEF2FF', label: 'Sprint Reply' },
+  'sprint-reply': { primary: '#4F46E5', secondary: '#FFFFFF', accent: '#EEF2FF', label: 'Kickstart' },
   'midnight':     { primary: '#1E2761', secondary: '#CADCFC', accent: '#F0F4FF', label: 'Midnight blue' },
   'forest':       { primary: '#2C5F2D', secondary: '#97BC62', accent: '#F4F9F0', label: 'Forest green' },
   'charcoal':     { primary: '#36454F', secondary: '#E8E8E8', accent: '#F7F7F7', label: 'Charcoal' },

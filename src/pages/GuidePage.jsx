@@ -33,7 +33,7 @@ export default function GuidePage() {
         <ul style={{ paddingLeft: 16 }}>
           <li style={li}>Upload any <code>.pptx</code> or <code>.potx</code> file — the primary colour is extracted and applied to all document headers and table headings.</li>
           <li style={li}>You can also set hex codes manually for Primary and Secondary colours.</li>
-          <li style={li}>Five built-in presets cover Sprint Reply's palette plus common client styles.</li>
+          <li style={li}>Five built-in colour presets cover common brand styles — or set any hex code manually.</li>
           <li style={li}>Theme colours appear as heading colours and table header backgrounds in Word docs, and column header fills in spreadsheets.</li>
         </ul>
       </GuideCard>

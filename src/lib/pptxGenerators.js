@@ -220,7 +220,7 @@ async function buildPptx(slideData, theme, deckTitle) {
 export async function genKickoffDeck(ctx, opts) {
   const data = await callClaudeJSON({
     ...opts,
-    user: `Generate kick-off presentation slides for: Project: ${ctx.pname} | Client: ${ctx.cname} | Team: ${ctx.team} | Scope: ${ctx.scope}${ctx.instructions?.['kick-off-deck'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['kick-off-deck']}` : ''}
+    user: `Generate kick-off presentation slides for: Project: ${ctx.pname} | Client: ${ctx.cname} | Team: ${ctx.team} | Scope: ${ctx.scope}${ctx.instructions?.['kick-off-deck'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['kick-off-deck']}` : ''}${ctx.examples?.['kick-off-deck']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['kick-off-deck'].text.slice(0, 4000)}` : ''}
 Return JSON: {slides:[{title:string,bulletPoints:[string]} x 8-10 slides]}`,
   })
   return buildPptx(data.slides || [], ctx.theme, `Kick-off — ${ctx.pname}`)
@@ -229,7 +229,7 @@ Return JSON: {slides:[{title:string,bulletPoints:[string]} x 8-10 slides]}`,
 export async function genDeliveryReport(ctx, opts) {
   const data = await callClaudeJSON({
     ...opts,
-    user: `Generate delivery status presentation slides for: Project: ${ctx.pname} | Client: ${ctx.cname} | Method: ${ctx.method} | Scope: ${ctx.scope}${ctx.instructions?.['delivery-report'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['delivery-report']}` : ''}
+    user: `Generate delivery status presentation slides for: Project: ${ctx.pname} | Client: ${ctx.cname} | Method: ${ctx.method} | Scope: ${ctx.scope}${ctx.instructions?.['delivery-report'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['delivery-report']}` : ''}${ctx.examples?.['delivery-report']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['delivery-report'].text.slice(0, 4000)}` : ''}
 Return JSON: {slides:[{title:string,bulletPoints:[string]} x 8-12 slides]}`,
   })
   return buildPptx(data.slides || [], ctx.theme, `Delivery Report — ${ctx.pname}`)

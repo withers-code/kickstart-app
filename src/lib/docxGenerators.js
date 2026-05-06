@@ -116,7 +116,7 @@ async function buildDocx(content, theme) {
 async function fetchDoD(ctx, opts) {
   return callClaudeJSON({
     ...opts,
-    user: `Generate DoD/DoR content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}${ctx.instructions?.['dod-dor'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['dod-dor']}` : ''}
+    user: `Generate DoD/DoR content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}${ctx.instructions?.['dod-dor'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['dod-dor']}` : ''}${ctx.examples?.['dod-dor']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['dod-dor'].text.slice(0, 4000)}` : ''}
 Return JSON: {ready:[12 specific testable criteria strings],done:[14 criteria strings],sprintDone:[6 criteria strings],releaseDone:[8 criteria strings]}`,
   })
 }
@@ -124,7 +124,7 @@ Return JSON: {ready:[12 specific testable criteria strings],done:[14 criteria st
 async function fetchRequirements(ctx, opts) {
   return callClaudeJSON({
     ...opts,
-    user: `Generate requirements doc content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['requirements'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['requirements']}` : ''}
+    user: `Generate requirements doc content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['requirements'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['requirements']}` : ''}${ctx.examples?.['requirements']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['requirements'].text.slice(0, 4000)}` : ''}
 Return JSON: {purpose:string,inScope:[5-7 items],outScope:[4-5 items],assumptions:[6 items],
 stakeholders:[{name,role,requirements} x5],
 functional:[{id,category,priority(Must|Should|Could|Wont),requirement,acceptance,status} x18 items],
@@ -136,7 +136,7 @@ openQuestions:[{id,question,owner,date,resolution} x5]}`,
 async function fetchHandover(ctx, opts) {
   return callClaudeJSON({
     ...opts,
-    user: `Generate handover log content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['handover'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['handover']}` : ''}
+    user: `Generate handover log content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['handover'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['handover']}` : ''}${ctx.examples?.['handover']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['handover'].text.slice(0, 4000)}` : ''}
 Return JSON: {keyContacts:[{name,role,org,email,notes} x6],workstreams:[{name,status,priority,nextAction,owner} x5],topRisks:[string x3],relationshipContext:string,techNotes:string,outstandingActions:[{action,owner,due,priority} x5]}`,
   })
 }
@@ -144,7 +144,7 @@ Return JSON: {keyContacts:[{name,role,org,email,notes} x6],workstreams:[{name,st
 async function fetchChecklist(ctx, opts) {
   return callClaudeJSON({
     ...opts,
-    user: `Generate project checklist content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['project-checklist'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['project-checklist']}` : ''}
+    user: `Generate project checklist content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['project-checklist'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['project-checklist']}` : ''}${ctx.examples?.['project-checklist']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['project-checklist'].text.slice(0, 4000)}` : ''}
 Return JSON: {governance:[8 items],teamAccess:[8 items],requirements:[7 items],technical:[8 items],testing:[5 items],changeManagement:[5 items],preGoLive:[10 items]}`,
   })
 }
@@ -152,7 +152,7 @@ Return JSON: {governance:[8 items],teamAccess:[8 items],requirements:[7 items],t
 async function fetchTechSpec(ctx, opts) {
   return callClaudeJSON({
     ...opts,
-    user: `Generate tech spec content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['tech-spec'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['tech-spec']}` : ''}
+    user: `Generate tech spec content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['tech-spec'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['tech-spec']}` : ''}${ctx.examples?.['tech-spec']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['tech-spec'].text.slice(0, 4000)}` : ''}
 Return JSON: {purpose:string,architectureDesc:string,components:[{name,technology,purpose,owner} x6],decisions:[{decision,chosen,rationale,alternatives} x5],integrations:[{system,method,auth,format,owner} x4],security:[6 check items],nfrs:[{nfr,requirement,approach} x5],openQuestions:[{question,owner,date,resolution} x5]}`,
   })
 }
@@ -160,7 +160,7 @@ Return JSON: {purpose:string,architectureDesc:string,components:[{name,technolog
 async function fetchUAT(ctx, opts) {
   return callClaudeJSON({
     ...opts,
-    user: `Generate UAT guide content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}${ctx.instructions?.['uat-guide'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['uat-guide']}` : ''}
+    user: `Generate UAT guide content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}${ctx.instructions?.['uat-guide'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['uat-guide']}` : ''}${ctx.examples?.['uat-guide']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['uat-guide'].text.slice(0, 4000)}` : ''}
 Return JSON: {entryCriteria:[7 items],exitCriteria:[6 items]}`,
   })
 }
@@ -223,7 +223,7 @@ export async function genDocxMeetingNotes(ctx) {
     ], ctx.theme.primary), space(),
     h2('Attendees'),
     makeTable(['Name','Organisation','Role','Present?'], [3000,2500,2500,1526],
-      [[ctx.dm,'Sprint Reply','Delivery Manager','Y'],['[Name]',ctx.cname,'[Role]','']], ctx.theme.primary), space(),
+      [[ctx.dm,'Kickstart','Delivery Manager','Y'],['[Name]',ctx.cname,'[Role]','']], ctx.theme.primary), space(),
     h2('Agenda'),
     makeTable(['#','Item','Owner','Time'], [500,5500,2000,1526],
       [['1','Introductions / housekeeping','Facilitator','5 min'],['2','[AGENDA ITEM]','[OWNER]','[X min]'],['3','Actions review','All','5 min'],['4','AOB','All','5 min']], ctx.theme.primary), space(),
@@ -368,14 +368,14 @@ export async function genDocxUAT(ctx, opts) {
       [['Critical','System unusable / data loss','Same day'],['High','Major function broken / no workaround','2 business days'],['Medium','Function impaired / workaround exists','Next sprint'],['Low','Cosmetic / minor inconvenience','Backlog']], ctx.theme.primary), space(),
     h2('7. Sign-off'),
     makeTable(['','Name','Signature','Date'], [2500,2500,2500,2026],
-      [['Client test lead','','',''],['Client sign-off authority','','',''],['Sprint Reply DM',ctx.dm,'','']], ctx.theme.primary),
+      [['Client test lead','','',''],['Client sign-off authority','','',''],['Kickstart DM',ctx.dm,'','']], ctx.theme.primary),
   ], ctx.theme)
 }
 
 export async function genDocxClientRequest(ctx) {
   return buildDocx([
     h1(`Client Request Template — ${ctx.pname}`),
-    p('Use this template to submit all new requests to Sprint Reply.', { italic: true }), space(),
+    p('Use this template to submit all new requests to Kickstart.', { italic: true }), space(),
     makeTable(['Field','Value'], [2500,7026],
       [['Request ID','[Auto-assigned by DM]'],['Date submitted','[DATE]'],['Submitted by','[CLIENT NAME, ROLE]'],['Project',ctx.pname],['Priority','Critical | High | Medium | Low']], ctx.theme.primary), space(),
     h2('1. Request summary'),
@@ -389,7 +389,7 @@ export async function genDocxClientRequest(ctx) {
     h2('5. Stakeholders and approvals'),
     makeTable(['Role','Name','Approval required?'], [3000,3500,3026],
       [['Business requester','[NAME]','Required'],['Business owner','[NAME]','Required'],['Technical approver','[NAME]','If technical']], ctx.theme.primary), space(),
-    h2('6. Sprint Reply use only'),
+    h2('6. Kickstart use only'),
     makeTable(['Field','Value'], [2500,7026],
       [['Received by',ctx.dm],['Jira ticket ID',''],['Estimated effort',''],['Target sprint',''],['Status','Triage / Accepted / Deferred / Rejected']], ctx.theme.primary),
   ], ctx.theme)

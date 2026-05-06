@@ -13,7 +13,7 @@ import { genConfluencePrompt, genJiraPrompt } from '../lib/atlassianGenerators.j
 
 const PRESET_SR = THEME_PRESETS['sprint-reply']
 
-export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText, customInstructions }) {
+export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText, customInstructions, artefactExamples }) {
   const [ctx, setCtx] = useState({
     pname: '', cname: '', dm: '', start: '',
     method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '',
@@ -60,7 +60,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
   }
 
   const opts = { apiKey, model: model || 'claude-sonnet-4-20250514', maxTokens: maxTokens || 4000 }
-  const fullCtx = { ...ctx, sow: sowText, theme, instructions: customInstructions }
+  const fullCtx = { ...ctx, sow: sowText, theme, instructions: customInstructions, examples: artefactExamples }
 
   function updateResult(id, patch) {
     setResults(rs => rs.map(r => r.id === id ? { ...r, ...patch } : r))

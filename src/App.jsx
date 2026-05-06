@@ -23,10 +23,16 @@ export default function App() {
   const [customInstructions, setCustomInstructions] = useState(() => {
     try { return JSON.parse(localStorage.getItem('sr_artefact_instructions') || '{}') } catch { return {} }
   })
+  const [artefactExamples, setArtefactExamples] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('sr_artefact_examples') || '{}') } catch { return {} }
+  })
 
   useEffect(() => {
     localStorage.setItem('sr_artefact_instructions', JSON.stringify(customInstructions))
   }, [customInstructions])
+  useEffect(() => {
+    localStorage.setItem('sr_artefact_examples', JSON.stringify(artefactExamples))
+  }, [artefactExamples])
   const meta = PAGE_META[page] || PAGE_META.generate
 
   const handlePageChange = (newPage) => {
@@ -85,8 +91,8 @@ export default function App() {
         {/* Content */}
         <div style={{ padding: 'clamp(16px, 5vw, 28px)', overflowY: 'auto', flex: 1, width: '100%' }}>
           <div style={{ maxWidth: 'min(1020px, 100%)', width: '100%', marginLeft: 'auto', marginRight: 'auto' }}>
-            {page === 'generate' && <GeneratePage apiKey={apiKey} model={model} maxTokens={maxTokens} sowText={sowText} setSowText={setSowText} customInstructions={customInstructions} />}
-            {page === 'instructions' && <InstructionsPage instructions={customInstructions} setInstructions={setCustomInstructions} />}
+            {page === 'generate' && <GeneratePage apiKey={apiKey} model={model} maxTokens={maxTokens} sowText={sowText} setSowText={setSowText} customInstructions={customInstructions} artefactExamples={artefactExamples} />}
+            {page === 'instructions' && <InstructionsPage instructions={customInstructions} setInstructions={setCustomInstructions} examples={artefactExamples} setExamples={setArtefactExamples} />}
             {page === 'guide' && <GuidePage />}
             {page === 'settings' && <SettingsPage apiKey={apiKey} setApiKey={setApiKey} model={model} setModel={setModel} maxTokens={maxTokens} setMaxTokens={setMaxTokens} sowText={sowText} setSowText={setSowText} />}
           </div>

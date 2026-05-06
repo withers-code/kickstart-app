@@ -1,4 +1,5 @@
 import mammoth from 'mammoth'
+import * as XLSX from 'xlsx'
 import { callClaudeJSON } from './api.js'
 
 const EXTRACT_PROMPT = `Extract project context from this Statement of Work document.
@@ -42,6 +43,30 @@ function toBase64(arrayBuffer) {
   let binary = ''
   for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i])
   return btoa(binary)
+}
+
+// Extract text content from an example artefact file (.docx, .xlsx, .txt)
+export async function extractExampleText(file) {
+  const ext = file.name.split('.').pop().toLowerCase()
+
+  if (ext === 'txt') return readAsText(file)
+
+  if (ext === 'docx') {
+    const buf = await readAsArrayBuffer(file)
+    const result = await mammoth.extractRawText({ arrayBuffer: buf })
+    return result.value
+  }
+
+  if (ext === 'xlsx') {
+    const buf = await readAsArrayBuffer(file)
+    const wb = XLSX.read(buf, { type: 'array' })
+    return wb.SheetNames.map(name => {
+      const ws = wb.Sheets[name]
+      return `=== ${name} ===\n${XLSX.utils.sheet_to_csv(ws)}`
+    }).join('\n\n')
+  }
+
+  throw new Error(`Unsupported type .${ext}. Use .docx, .xlsx, or .txt.`)
 }
 
 // Extract raw text from the uploaded file

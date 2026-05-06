@@ -1,5 +1,5 @@
 import React from 'react'
-import { Zap, FileText, Info, Settings, SlidersHorizontal } from 'lucide-react'
+import { FileText, Info, Settings, SlidersHorizontal } from 'lucide-react'
 
 const NAV = [
   { id: 'generate', label: 'Generate documents', Icon: FileText },
@@ -7,6 +7,22 @@ const NAV = [
   { id: 'guide', label: 'How to use', Icon: Info },
   { id: 'settings', label: 'API & settings', Icon: Settings },
 ]
+
+function KickstartLogo({ size = 30 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 30 30" fill="none">
+      <rect width="30" height="30" rx="7" fill="#0F172A"/>
+      <path
+        d="M9 7v16M9 15l10-8M9 15l10 8"
+        stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+      />
+      <path
+        d="M23 5.5L23.78 7.22L25.5 8L23.78 8.78L23 10.5L22.22 8.78L20.5 8L22.22 7.22Z"
+        fill="#F59E0B"
+      />
+    </svg>
+  )
+}
 
 export default function Sidebar({ page, setPage, sidebarOpen }) {
   return (
@@ -25,15 +41,10 @@ export default function Sidebar({ page, setPage, sidebarOpen }) {
         borderBottom: '1px solid var(--border)',
         marginBottom: 10,
       }}>
-        <div style={{
-          width: 30, height: 30, background: 'var(--text)',
-          borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}>
-          <Zap size={15} color="white" strokeWidth={2.5} />
-        </div>
+        <KickstartLogo size={30} />
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em', lineHeight: 1.2 }}>Sprint Reply</div>
-          <div style={{ fontSize: 10, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Kickstart</div>
+          <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2 }}>Kickstart</div>
+          <div style={{ fontSize: 10, color: 'var(--t3)', letterSpacing: '0.02em', marginTop: 1 }}>Project artefact generator</div>
         </div>
       </div>
 
@@ -66,10 +77,8 @@ export default function Sidebar({ page, setPage, sidebarOpen }) {
       {/* Footer */}
       <div style={{ marginTop: 'auto', padding: '14px 16px', borderTop: '1px solid var(--border)', fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
         v2.0 · May 2026<br />
-        AI &amp; Process Automation<br />
-        Sprint Reply Internal
+        Project artefact generator
       </div>
     </nav>
   )
 }
-
