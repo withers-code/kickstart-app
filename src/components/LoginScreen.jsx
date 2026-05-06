@@ -30,8 +30,8 @@ export default function LoginScreen({ onSignIn }) {
     setLoading(true)
     setError(null)
     try {
-      const account = await signIn()
-      onSignIn(account)
+      await signIn()
+      // Page redirects to Microsoft — execution stops here on success
     } catch (e) {
       setError(e.message || 'Sign-in failed. Please try again.')
       setLoading(false)

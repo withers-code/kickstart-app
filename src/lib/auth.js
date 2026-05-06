@@ -34,24 +34,25 @@ async function getMsal() {
   return _msal
 }
 
-// Call on app startup — returns existing account from cache, or null
+// Call on app startup — handles redirect response and returns account, or null
 export async function initAuth() {
   if (!AUTH_ENABLED) return null
   const msal = await getMsal()
-  await msal.handleRedirectPromise().catch(() => null)
+  const result = await msal.handleRedirectPromise().catch(() => null)
+  if (result?.account) return result.account
   const accounts = msal.getAllAccounts()
   return accounts[0] ?? null
 }
 
-// Trigger Microsoft login popup — returns the account
+// Trigger Microsoft login via redirect (more reliable than popup)
 export async function signIn() {
   const msal = await getMsal()
-  const result = await msal.loginPopup(loginRequest)
-  return result.account
+  await msal.loginRedirect(loginRequest)
+  // Page will redirect — execution stops here
 }
 
-// Trigger Microsoft logout popup
+// Trigger Microsoft logout via redirect
 export async function signOut(account) {
   const msal = await getMsal()
-  await msal.logoutPopup({ account })
+  await msal.logoutRedirect({ account })
 }
