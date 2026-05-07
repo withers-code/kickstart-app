@@ -162,8 +162,13 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
                       <div style={{ fontSize: 12, fontWeight: 500, color: isActive ? 'var(--purple)' : 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontStyle: entry.pname ? 'normal' : 'italic' }}>
                         {displayName}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {[entry.cname, formatDate(entry.timestamp)].filter(Boolean).join(' · ')}
+                      <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{[entry.cname, formatDate(entry.timestamp)].filter(Boolean).join(' · ')}</span>
+                        {entry.generatedIds?.length > 0 && (
+                          <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 600, background: 'var(--pl)', color: 'var(--purple)', padding: '1px 5px', borderRadius: 5 }}>
+                            {entry.generatedIds.length}
+                          </span>
+                        )}
                       </div>
                     </button>
                     <button

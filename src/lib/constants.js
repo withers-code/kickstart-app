@@ -1,4 +1,5 @@
 export const DOCX_ARTS = [
+  { id: 'pid',              name: 'Project initiation document', desc: 'Project charter — objectives, governance & constraints', type: 'docx' },
   { id: 'dod-dor',          name: 'Definition of Done & Ready', desc: 'Sprint acceptance criteria & checklists',   type: 'docx' },
   { id: 'requirements',     name: 'Requirements document',      desc: 'Functional & non-functional requirements',  type: 'docx' },
   { id: 'meeting-notes',    name: 'Meeting notes template',     desc: 'Agenda, actions & decisions format',        type: 'docx' },
@@ -18,22 +19,24 @@ export const DOCX_ARTS = [
 ]
 
 export const XLSX_ARTS = [
-  { id: 'raid',         name: 'RAID log',        desc: 'Risks, assumptions, issues & dependencies', type: 'xlsx' },
-  { id: 'stakeholder',  name: 'Stakeholder map', desc: 'Power/interest grid & contact register',    type: 'xlsx' },
-  { id: 'raci',         name: 'RACI matrix',     desc: 'Roles & responsibilities across workstreams',type: 'xlsx' },
-  { id: 'project-plan', name: 'Project plan',    desc: 'Milestones, phases & delivery timeline',    type: 'xlsx' },
-  { id: 'decision-log', name: 'Decision log',    desc: 'Decisions & rationale tracker',             type: 'xlsx' },
-  { id: 'comms-plan',   name: 'Comms plan',      desc: 'Stakeholder communication schedule',        type: 'xlsx' },
+  { id: 'raid',           name: 'RAID log',        desc: 'Risks, assumptions, issues & dependencies', type: 'xlsx' },
+  { id: 'stakeholder',    name: 'Stakeholder map', desc: 'Power/interest grid & contact register',    type: 'xlsx' },
+  { id: 'raci',           name: 'RACI matrix',     desc: 'Roles & responsibilities across workstreams',type: 'xlsx' },
+  { id: 'project-plan',   name: 'Project plan',    desc: 'Milestones, phases & delivery timeline',    type: 'xlsx' },
+  { id: 'budget-tracker', name: 'Budget tracker',  desc: 'Planned vs actual vs forecast by phase',    type: 'xlsx' },
+  { id: 'decision-log',   name: 'Decision log',    desc: 'Decisions & rationale tracker',             type: 'xlsx' },
+  { id: 'comms-plan',     name: 'Comms plan',      desc: 'Stakeholder communication schedule',        type: 'xlsx' },
 ]
 
 export const PPT_ARTS = [
-  { id: 'kick-off-deck', name: 'Kick-off Deck', desc: 'Project kickoff presentation slides', type: 'pptx' },
-  { id: 'delivery-report', name: 'Delivery Report', desc: 'Project status & delivery slides', type: 'pptx' },
+  { id: 'kick-off-deck',  name: 'Kick-off deck',             desc: 'Project kickoff presentation slides',               type: 'pptx' },
+  { id: 'steering-pack',  name: 'Steering committee pack',   desc: 'Executive briefing — RAG status, decisions & escalations', type: 'pptx' },
+  { id: 'delivery-report',name: 'Delivery report',           desc: 'Project status & delivery slides',                  type: 'pptx' },
 ]
 
 export const EXT_ARTS = [
-  { id: 'confluence', name: 'Confluence space',    desc: 'Full baseline space — Rovo prompt + wiki markup fallback', type: 'prompt' },
-  { id: 'jira-sow',   name: 'Jira tickets from SoW', desc: 'Decompose SoW into Epics / Stories / Tasks via Rovo',   type: 'prompt' },
+  { id: 'confluence', name: 'Confluence space',       desc: 'Full baseline space — Rovo prompt + wiki markup fallback', type: 'prompt' },
+  { id: 'jira-sow',   name: 'Jira tickets from SoW',  desc: 'Decompose SoW into Epics / Stories / Tasks via Rovo',     type: 'prompt' },
 ]
 
 export const ALL_ARTS = [...DOCX_ARTS, ...XLSX_ARTS, ...PPT_ARTS, ...EXT_ARTS]
@@ -43,13 +46,13 @@ export const PHASES = [
     id: 'initiation',
     label: 'Initiation',
     desc: 'Set the project up for success from day one',
-    artIds: ['kick-off-deck', 'requirements', 'dod-dor', 'tech-spec', 'raid', 'stakeholder', 'raci', 'project-plan', 'comms-plan', 'client-request', 'confluence', 'jira-sow'],
+    artIds: ['pid', 'kick-off-deck', 'requirements', 'dod-dor', 'tech-spec', 'raid', 'stakeholder', 'raci', 'project-plan', 'budget-tracker', 'comms-plan', 'client-request', 'confluence', 'jira-sow'],
   },
   {
     id: 'delivery',
     label: 'Delivery',
     desc: 'Track progress, manage change and keep stakeholders informed',
-    artIds: ['status-report', 'meeting-notes', 'retrospective', 'sprint-review', 'change-request', 'decision-log', 'uat-guide'],
+    artIds: ['status-report', 'steering-pack', 'meeting-notes', 'retrospective', 'sprint-review', 'change-request', 'decision-log', 'uat-guide'],
   },
   {
     id: 'closure',
@@ -60,6 +63,7 @@ export const PHASES = [
 ]
 
 export const DEFAULT_INSTRUCTIONS = {
+  'pid': 'Generates a Project Initiation Document with: 1-sentence purpose statement, 2-sentence business background, 5 SMART objectives with success criteria, in-scope (6 items) and out-of-scope (4 items) boundaries, 5 assumptions, 4 constraints, 3 dependencies, governance structure (sponsor, steering committee members, DM, review cadence), 5-phase high-level timeline with target dates and key deliverables, budget summary with total, contingency and approving authority, 4 key risks with impact and mitigation, and a formal approval sign-off table.',
   'dod-dor': 'Generates sprint acceptance criteria in four sections: Definition of Ready (12 criteria for when a ticket can enter a sprint), Definition of Done (14 criteria for ticket completion), Sprint Done (6 criteria for sprint closure), and Release Done (8 criteria for production deployment readiness). Criteria are tailored to your methodology and project scope.',
   'requirements': 'Generates a formal requirements document with: project purpose statement, 5–7 in-scope items, 4–5 out-of-scope items, 6 assumptions, 5-entry stakeholder register, 18 functional requirements with MoSCoW prioritisation and acceptance criteria, 8 non-functional requirements, and 5 open questions.',
   'meeting-notes': 'Produces a reusable meeting notes template (static — no AI generation) with: document control table, attendee register, agenda table, notes sections, decisions log, and actions tracker. Copy and complete for each meeting.',
@@ -73,9 +77,11 @@ export const DEFAULT_INSTRUCTIONS = {
   'stakeholder': 'Generates 14 stakeholders mapped to a power/interest grid. Each entry includes influence, interest, attitude (Champion → Blocker), engagement approach, and quadrant assignment. Includes a grid summary sheet.',
   'raci': 'Generates a RACI matrix with 10 roles and 22 activities across Planning, Requirements, Design, Development, Testing, Deployment, and Governance phases. Includes a legend sheet.',
   'project-plan': 'Generates a 6-phase project plan with start week, duration, key milestones, owner, and status for each phase. Includes a planning assumptions sheet.',
+  'budget-tracker': 'Generates a budget tracker with 5 project phases, each broken down across 5 cost categories (People, Software & Licences, Infrastructure, Travel & Expenses, Contingency). Each line has unit, quantity, unit cost, planned total, actual to date, forecast to complete, and variance. Includes a Summary sheet with RAG status per phase and an overall budget health indicator.',
   'decision-log': 'Generates 8 pre-seeded decision log entries relevant to your project scope, each with date, decision, rationale, options considered, decision maker, impact level, status, and review date.',
   'comms-plan': 'Generates 14 communication activities covering key audiences, communication types, purpose, frequency, channel, owner, format, and notes.',
   'kick-off-deck': 'Generates an 8–10 slide kick-off presentation. Slides cover: project overview, objectives & scope, team introductions, delivery methodology, timeline, risks & dependencies, ways of working, and next steps.',
+  'steering-pack': 'Generates a 6-slide steering committee pack for executive audiences. Slides cover: project overview with overall RAG and key stats, RAG dashboard (4 areas: Schedule, Budget, Quality, Risk), decisions required by the steering committee (3–5 items with consequence of inaction), financial summary (budget vs actuals), top risks for escalation (3 risks with recommendations), and next 30 days milestones.',
   'delivery-report': 'Generates a 7–9 slide delivery status report. Slides cover: executive summary with RAG status, delivery progress, milestone tracker, risk & issue highlights, team updates, and next period plan.',
   'confluence': 'Generates an Atlassian Rovo prompt to create a full Confluence project space (Home, Ways of Working, Glossary, Roles & Responsibilities, Templates, Sprint Tracker, RAID Log, Decisions, Timeline), plus ready-to-paste wiki markup for the Home page as a fallback.',
   'jira-sow': 'Generates an Atlassian Rovo prompt to decompose your SoW into a full Jira backlog, plus a manual backlog and sprint plan as fallback. Produces Epics per workstream, Stories with Gherkin acceptance criteria and Fibonacci story points, Tasks, and Spikes.',

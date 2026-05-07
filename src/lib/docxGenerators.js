@@ -595,3 +595,74 @@ export async function genDocxProjectClosure(ctx, opts) {
     ], ctx.theme.primary),
   ], ctx.theme)
 }
+
+// ─── Project Initiation Document ─────────────────────────────────────────────
+async function fetchPID(ctx, opts) {
+  return callClaudeJSON({
+    ...opts,
+    user: `Generate a Project Initiation Document. Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Team: ${ctx.team} | Tech: ${ctx.tech} | Start: ${ctx.start} | Industry: ${ctx.industry}${ctx.sow ? `\n\nSOW CONTEXT:\n${ctx.sow.slice(0, 4000)}` : ''}${ctx.instructions?.['pid'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['pid']}` : ''}${ctx.examples?.['pid']?.text ? `\n\nEXAMPLE:\n${ctx.examples['pid'].text.slice(0, 3000)}` : ''}
+Return JSON:
+{
+  "purpose": "one-sentence mission statement",
+  "background": "2 sentences of business context explaining why this project is needed",
+  "objectives": [{"objective":"SMART objective text","successCriteria":"measurable outcome"} x5],
+  "inScope": ["item" x6],
+  "outOfScope": ["item" x4],
+  "assumptions": ["assumption" x5],
+  "constraints": ["constraint" x4],
+  "dependencies": ["dependency" x3],
+  "governance": {
+    "sponsor": "Name — Title",
+    "steeringMembers": ["Name — Role" x3],
+    "deliveryManager": "Name",
+    "reviewCadence": "e.g. Weekly Steering call — Mondays 9am"
+  },
+  "timeline": [{"phase":"phase name","target":"target date or week range","keyDeliverable":"primary outcome"} x5],
+  "budget": {"totalBudget":"£XXX,XXX","contingency":"10%","approvedBy":"Name — Title"},
+  "risks": [{"risk":"description","impact":"High|Medium|Low","mitigation":"action"} x4],
+  "approvals": [{"role":"Project Sponsor"},{"role":"Client Programme Manager"},{"role":"Delivery Manager"},{"role":"Practice Lead"}]
+}`,
+  })
+}
+
+export async function genDocxPID(ctx, opts) {
+  const d = await fetchPID(ctx, opts)
+  return buildDocx([
+    h1(`Project Initiation Document — ${ctx.pname}`), space(), ...docControl(ctx),
+    h2('1. Purpose'), p(d.purpose || ''), space(),
+    h2('2. Business background'), p(d.background || ''), space(),
+    h2('3. Objectives & success criteria'),
+    makeTable(['#', 'Objective', 'Success criteria'], [500, 4500, 4526],
+      (d.objectives || []).map((o, i) => [`${i + 1}`, o.objective, o.successCriteria]), ctx.theme.primary), space(),
+    h2('4. Scope'),
+    h3('In scope'), ...(d.inScope || []).map(bullet),
+    h3('Out of scope'), ...(d.outOfScope || []).map(bullet), space(),
+    h2('5. Assumptions, constraints & dependencies'),
+    h3('Assumptions'), ...(d.assumptions || []).map(bullet),
+    h3('Constraints'), ...(d.constraints || []).map(bullet),
+    h3('Dependencies'), ...(d.dependencies || []).map(bullet), space(),
+    h2('6. Governance'),
+    makeTable(['Role', 'Name / Detail'], [3000, 6526], [
+      ['Project Sponsor', d.governance?.sponsor || ''],
+      ['Steering Committee', (d.governance?.steeringMembers || []).join(', ')],
+      ['Delivery Manager', d.governance?.deliveryManager || ctx.dm || ''],
+      ['Review Cadence', d.governance?.reviewCadence || ''],
+    ], ctx.theme.primary), space(),
+    h2('7. High-level timeline'),
+    makeTable(['Phase', 'Target', 'Key deliverable'], [2500, 2000, 5026],
+      (d.timeline || []).map(t => [t.phase, t.target, t.keyDeliverable]), ctx.theme.primary), space(),
+    h2('8. Budget summary'),
+    makeTable(['Item', 'Value'], [3000, 6526], [
+      ['Total approved budget', d.budget?.totalBudget || 'TBC'],
+      ['Contingency', d.budget?.contingency || '10%'],
+      ['Approved by', d.budget?.approvedBy || ''],
+    ], ctx.theme.primary), space(),
+    h2('9. Key risks'),
+    makeTable(['Risk', 'Impact', 'Mitigation'], [4500, 1200, 3826],
+      (d.risks || []).map(r => [r.risk, r.impact, r.mitigation]), ctx.theme.primary), space(),
+    h2('10. Approvals'),
+    p('By signing below, the named individuals confirm their understanding of and commitment to this project.', { italic: true }), space(),
+    makeTable(['Role', 'Name', 'Signature', 'Date'], [3000, 2500, 2000, 2026],
+      (d.approvals || []).map(a => [a.role, '', '', '']), ctx.theme.primary),
+  ], ctx.theme)
+}

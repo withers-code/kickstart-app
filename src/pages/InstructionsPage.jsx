@@ -5,19 +5,20 @@ import {
   CheckCircle, List, Repeat2, CheckSquare, Code, File, Send,
   BookOpen, Layers, Presentation, BarChart3,
   Activity, GitBranch, Monitor, Lightbulb, Archive,
+  FolderOpen, DollarSign, Building2,
 } from 'lucide-react'
 import { PHASES, ALL_ARTS, DEFAULT_INSTRUCTIONS } from '../lib/constants.js'
 import { Textarea, Btn, Spinner } from '../components/ui.jsx'
 import { extractExampleText } from '../lib/sowParser.js'
 
 const ICON_MAP = {
-  'dod-dor': CheckCircle, 'requirements': List, 'meeting-notes': FileText,
+  'pid': FolderOpen, 'dod-dor': CheckCircle, 'requirements': List, 'meeting-notes': FileText,
   'handover': Repeat2, 'retrospective': Repeat2, 'project-checklist': CheckSquare,
   'tech-spec': Code, 'uat-guide': File, 'client-request': Send,
   'raid': Shield, 'stakeholder': Users, 'raci': LayoutGrid,
-  'project-plan': Calendar, 'decision-log': Clipboard, 'comms-plan': Phone,
+  'project-plan': Calendar, 'budget-tracker': DollarSign, 'decision-log': Clipboard, 'comms-plan': Phone,
   'confluence': BookOpen, 'jira-sow': Layers,
-  'kick-off-deck': Presentation, 'delivery-report': BarChart3,
+  'kick-off-deck': Presentation, 'steering-pack': Building2, 'delivery-report': BarChart3,
   'status-report': Activity, 'change-request': GitBranch,
   'sprint-review': Monitor, 'lessons-learned': Lightbulb, 'project-closure': Archive,
 }

@@ -1,20 +1,30 @@
 import React, { useState, useEffect } from 'react'
-import { Briefcase, Palette, CheckSquare, Zap } from 'lucide-react'
+import { Briefcase, Palette, CheckSquare, Zap, AlertTriangle, Info } from 'lucide-react'
 import { Card, CardTitle, Field, Input, Select, Textarea, Btn, Alert, FormGrid } from '../components/ui.jsx'
 import GenerationBanner from '../components/GenerationBanner.jsx'
 import SowUploader from '../components/SowUploader.jsx'
 import ThemePicker from '../components/ThemePicker.jsx'
 import ArtefactGrid from '../components/ArtefactGrid.jsx'
 import { ALL_ARTS, THEME_PRESETS } from '../lib/constants.js'
-import { genDocxDoD, genDocxRequirements, genDocxMeetingNotes, genDocxHandover, genDocxRetrospective, genDocxChecklist, genDocxTechSpec, genDocxUAT, genDocxClientRequest, genDocxChangeRequest, genDocxSprintReview, genDocxLessonsLearned, genDocxProjectClosure } from '../lib/docxGenerators.js'
-import { genRAID, genStakeholder, genRACI, genProjectPlan, genDecisionLog, genCommsPlan } from '../lib/xlsxGenerators.js'
-import { genKickoffDeck, genDeliveryReport, genPptxStatusReport } from '../lib/pptxGenerators.js'
+import { genDocxDoD, genDocxRequirements, genDocxMeetingNotes, genDocxHandover, genDocxRetrospective, genDocxChecklist, genDocxTechSpec, genDocxUAT, genDocxClientRequest, genDocxChangeRequest, genDocxSprintReview, genDocxLessonsLearned, genDocxProjectClosure, genDocxPID } from '../lib/docxGenerators.js'
+import { genRAID, genStakeholder, genRACI, genProjectPlan, genDecisionLog, genCommsPlan, genBudgetTracker } from '../lib/xlsxGenerators.js'
+import { genKickoffDeck, genDeliveryReport, genPptxStatusReport, genPptxSteeringPack } from '../lib/pptxGenerators.js'
 import { genConfluencePrompt, genJiraPrompt } from '../lib/atlassianGenerators.js'
 
 const PRESET_SR = THEME_PRESETS['sprint-reply']
-
 const BLANK_CTX = { pname: '', cname: '', clientContact: '', dm: '', start: '', method: 'Agile Scrum', sprint: '2 weeks', team: '', tech: '', industry: '', scope: '' }
 const BLANK_THEME = () => ({ presetKey: 'sprint-reply', primary: PRESET_SR.primary, secondary: PRESET_SR.secondary, accent: PRESET_SR.accent })
+
+function getHealthWarnings(ctx, sowText) {
+  const w = []
+  if (!ctx.cname.trim()) w.push({ level: 'warn', text: 'Client name missing — artefacts will use a placeholder.' })
+  if (!ctx.scope.trim()) w.push({ level: 'error', text: 'Project scope is empty — AI generators need this to produce useful content.' })
+  else if (ctx.scope.trim().length < 80) w.push({ level: 'warn', text: 'Scope is very brief — more detail significantly improves every artefact.' })
+  if (!ctx.start) w.push({ level: 'info', text: 'No start date — timeline and milestone artefacts will use placeholder dates.' })
+  if (!ctx.team.trim()) w.push({ level: 'info', text: 'Team composition not set — RACI and stakeholder map will use generic roles.' })
+  if (!sowText?.trim()) w.push({ level: 'info', text: 'No SoW uploaded — uploading one gives Claude full project context.' })
+  return w
+}
 
 export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSowText, customInstructions, artefactExamples, activeHistoryEntry, activeSessionId, onSaveHistory, onUpdateSession }) {
   const [ctx, setCtx] = useState(BLANK_CTX)
@@ -25,10 +35,10 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
   const [results, setResults] = useState([])
   const [generating, setGenerating] = useState(false)
   const [pnameError, setPnameError] = useState(false)
+  const [amendments, setAmendments] = useState({})
 
   const allCount = ALL_ARTS.length
 
-  // Reset or reload form whenever the active session changes
   useEffect(() => {
     if (activeHistoryEntry) {
       setCtx({ ...activeHistoryEntry.ctx })
@@ -39,38 +49,20 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
       setTheme(BLANK_THEME())
       setSelected(new Set())
     }
-    // Always clear the SOW when switching sessions — it belongs to the session, not the app
     setSowText?.('')
     setSowFileName(null)
     setResults([])
     setPnameError(false)
+    setAmendments({})
   }, [activeSessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Live-update sidebar entry name as user types
   useEffect(() => {
     onUpdateSession?.({ pname: ctx.pname, cname: ctx.cname })
   }, [ctx.pname, ctx.cname]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function toggleArt(id) {
-    setSelected(s => {
-      const n = new Set(s)
-      n.has(id) ? n.delete(id) : n.add(id)
-      return n
-    })
-  }
-
-  function toggleAll() {
-    if (selected.size === allCount) setSelected(new Set())
-    else setSelected(new Set(ALL_ARTS.map(a => a.id)))
-  }
-
-  function bulkToggle(ids, shouldSelect) {
-    setSelected(s => {
-      const n = new Set(s)
-      ids.forEach(id => shouldSelect ? n.add(id) : n.delete(id))
-      return n
-    })
-  }
+  function toggleArt(id) { setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n }) }
+  function toggleAll() { if (selected.size === allCount) setSelected(new Set()); else setSelected(new Set(ALL_ARTS.map(a => a.id))) }
+  function bulkToggle(ids, shouldSelect) { setSelected(s => { const n = new Set(s); ids.forEach(id => shouldSelect ? n.add(id) : n.delete(id)); return n }) }
 
   const set = (field) => (e) => {
     if (field === 'pname' && e.target.value.trim()) setPnameError(false)
@@ -79,18 +71,13 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
 
   function handleSowPopulate(fields, fileName) {
     const { sowText: rawSow, ...ctxFields } = fields
-    setCtx(c => {
-      const merged = { ...c }
-      Object.entries(ctxFields).forEach(([k, v]) => { if (v) merged[k] = v })
-      return merged
-    })
+    setCtx(c => { const merged = { ...c }; Object.entries(ctxFields).forEach(([k, v]) => { if (v) merged[k] = v }); return merged })
     if (rawSow && setSowText) setSowText(rawSow)
     setSowFileName(fileName)
   }
 
   function handleSowClear() {
-    setSowFileName(null)
-    setCtx(BLANK_CTX)
+    setSowFileName(null); setCtx(BLANK_CTX)
     if (setSowText) setSowText('')
   }
 
@@ -99,47 +86,46 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
   const fullCtx = { ...ctx, sow: sowText, theme, instructions: customInstructions, examples: artefactExamples }
 
   const docxFns = {
+    'pid': genDocxPID,
     'dod-dor': genDocxDoD, 'requirements': genDocxRequirements,
     'meeting-notes': genDocxMeetingNotes, 'handover': genDocxHandover,
     'retrospective': genDocxRetrospective, 'project-checklist': genDocxChecklist,
     'tech-spec': genDocxTechSpec, 'uat-guide': genDocxUAT,
-    'client-request': genDocxClientRequest,
-    'change-request': genDocxChangeRequest,
+    'client-request': genDocxClientRequest, 'change-request': genDocxChangeRequest,
     'sprint-review': genDocxSprintReview, 'lessons-learned': genDocxLessonsLearned,
     'project-closure': genDocxProjectClosure,
   }
   const staticDocx = new Set(['meeting-notes', 'retrospective', 'client-request', 'change-request', 'sprint-review'])
   const xlsxFns = {
     'raid': genRAID, 'stakeholder': genStakeholder, 'raci': genRACI,
-    'project-plan': genProjectPlan, 'decision-log': genDecisionLog, 'comms-plan': genCommsPlan,
+    'project-plan': genProjectPlan, 'budget-tracker': genBudgetTracker,
+    'decision-log': genDecisionLog, 'comms-plan': genCommsPlan,
   }
-  const pptxFns = { 'kick-off-deck': genKickoffDeck, 'delivery-report': genDeliveryReport, 'status-report': genPptxStatusReport }
+  const pptxFns = {
+    'kick-off-deck': genKickoffDeck, 'delivery-report': genDeliveryReport,
+    'status-report': genPptxStatusReport, 'steering-pack': genPptxSteeringPack,
+  }
 
-  async function runArt(art, updateFn) {
+  async function runArt(art, updateFn, amendment = '') {
+    const artCtx = amendment
+      ? { ...fullCtx, instructions: { ...fullCtx.instructions, [art.id]: [fullCtx.instructions?.[art.id], `REFINEMENT REQUEST: ${amendment}`].filter(Boolean).join('\n\n') } }
+      : fullCtx
     try {
       if (art.type === 'docx') {
         const fn = docxFns[art.id]
         if (!fn) throw new Error('Unknown docx type: ' + art.id)
-        const buf = staticDocx.has(art.id) ? await fn(fullCtx) : await fn(fullCtx, opts)
-        updateFn(art.id, { status: 'done', data: buf })
+        updateFn(art.id, { status: 'done', data: staticDocx.has(art.id) ? await fn(artCtx) : await fn(artCtx, opts) })
       } else if (art.type === 'xlsx') {
         const fn = xlsxFns[art.id]
         if (!fn) throw new Error('Unknown xlsx type: ' + art.id)
-        const data = await fn(fullCtx, opts)
-        updateFn(art.id, { status: 'done', data })
+        updateFn(art.id, { status: 'done', data: await fn(artCtx, opts) })
       } else if (art.type === 'pptx') {
         const fn = pptxFns[art.id]
         if (!fn) throw new Error('Unknown pptx type: ' + art.id)
-        const buf = await fn(fullCtx, optsOpus)
-        updateFn(art.id, { status: 'done', data: buf })
+        updateFn(art.id, { status: 'done', data: await fn(artCtx, optsOpus) })
       } else if (art.type === 'prompt') {
-        const text = art.id === 'confluence'
-          ? await genConfluencePrompt(fullCtx, opts)
-          : await genJiraPrompt(fullCtx, opts)
-        updateFn(art.id, {
-          status: 'prompt', data: text,
-          previewText: text.slice(0, 600) + (text.length > 600 ? '\n\n… (full content available via Download / Copy)' : ''),
-        })
+        const text = art.id === 'confluence' ? await genConfluencePrompt(artCtx, opts) : await genJiraPrompt(artCtx, opts)
+        updateFn(art.id, { status: 'prompt', data: text, previewText: text.slice(0, 600) + (text.length > 600 ? '\n\n… (full content available via Download / Copy)' : '') })
       }
     } catch (err) {
       updateFn(art.id, { status: 'error', error: err.message })
@@ -150,34 +136,33 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
     if (!apiKey) { alert('Add your Anthropic API key in Settings first.'); return }
     if (!ctx.pname.trim()) { setPnameError(true); document.getElementById('field-pname')?.focus(); return }
     if (selected.size === 0) { alert('Select at least one artefact.'); return }
-
     setGenerating(true)
+    setAmendments({})
     const arts = ALL_ARTS.filter(a => selected.has(a.id))
     const tracked = arts.map(a => ({ id: a.id, name: a.name, type: a.type, status: 'working', projectName: ctx.pname || 'project' }))
     setResults([...tracked])
-
     function updateResult(id, patch) {
       const idx = tracked.findIndex(r => r.id === id)
       if (idx >= 0) tracked[idx] = { ...tracked[idx], ...patch }
       setResults([...tracked])
     }
-
-    for (const art of arts) {
-      await runArt(art, updateResult)
-    }
-
+    for (const art of arts) await runArt(art, updateResult)
     setGenerating(false)
     onSaveHistory?.({ ctx, theme, selected, results: tracked })
   }
 
-  async function regenerateOne(artId) {
+  async function regenerateOne(artId, amendment = '') {
     if (!apiKey || generating) return
     const art = ALL_ARTS.find(a => a.id === artId)
     if (!art) return
     setResults(prev => prev.map(r => r.id === artId ? { ...r, status: 'working', error: undefined } : r))
     const updateFn = (id, patch) => setResults(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r))
-    await runArt(art, updateFn)
+    await runArt(art, updateFn, amendment)
+    if (amendment) setAmendments(prev => { const n = { ...prev }; delete n[artId]; return n })
   }
+
+  const healthWarnings = ctx.pname.trim() ? getHealthWarnings(ctx, sowText) : []
+  const hasErrors = healthWarnings.some(w => w.level === 'error')
 
   return (
     <div>
@@ -188,28 +173,16 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
         </Alert>
       )}
 
-      {/* 1. Context */}
       <Card>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <CardTitle icon={Briefcase}>1 · Project context</CardTitle>
-          <button onClick={handleSowClear} style={{ fontSize: 12, color: 'var(--t3)', background: 'none', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer', padding: '4px 10px', lineHeight: 1.4, marginTop: 0 }}>Clear form</button>
+          <button onClick={handleSowClear} style={{ fontSize: 12, color: 'var(--t3)', background: 'none', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer', padding: '4px 10px', lineHeight: 1.4 }}>Clear form</button>
         </div>
-        <SowUploader
-          opts={opts}
-          populated={!!sowFileName}
-          fileName={sowFileName}
-          onPopulate={handleSowPopulate}
-          onClear={handleSowClear}
-        />
+        <SowUploader opts={opts} populated={!!sowFileName} fileName={sowFileName} onPopulate={handleSowPopulate} onClear={handleSowClear} />
         <FormGrid cols={2} style={{ marginBottom: 10 }}>
           <Field label="Project name *">
-            <Input
-              id="field-pname"
-              value={ctx.pname}
-              onChange={set('pname')}
-              placeholder="e.g. AI Smart Assistant Phase 2"
-              style={pnameError ? { borderColor: 'var(--red)', boxShadow: '0 0 0 3px var(--rl)' } : undefined}
-            />
+            <Input id="field-pname" value={ctx.pname} onChange={set('pname')} placeholder="e.g. AI Smart Assistant Phase 2"
+              style={pnameError ? { borderColor: 'var(--red)', boxShadow: '0 0 0 3px var(--rl)' } : undefined} />
             {pnameError && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 4 }}>Project name is required</div>}
           </Field>
           <Field label="Client name"><Input value={ctx.cname} onChange={set('cname')} placeholder="e.g. British American Tobacco" /></Field>
@@ -222,18 +195,13 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
         <FormGrid cols={3} style={{ marginBottom: 10 }}>
           <Field label="Methodology">
             <Select value={ctx.method} onChange={set('method')}>
-              <option>Agile Scrum</option>
-              <option>Agile Kanban</option>
-              <option>Hybrid (Agile + Waterfall)</option>
-              <option>Waterfall / Phased</option>
+              <option>Agile Scrum</option><option>Agile Kanban</option>
+              <option>Hybrid (Agile + Waterfall)</option><option>Waterfall / Phased</option>
             </Select>
           </Field>
           <Field label="Sprint length">
             <Select value={ctx.sprint} onChange={set('sprint')}>
-              <option>1 week</option>
-              <option>2 weeks</option>
-              <option>3 weeks</option>
-              <option>4 weeks</option>
+              <option>1 week</option><option>2 weeks</option><option>3 weeks</option><option>4 weeks</option>
             </Select>
           </Field>
           <Field label="Team size &amp; composition"><Input value={ctx.team} onChange={set('team')} placeholder="e.g. 6 — 2 BAs, 3 devs, 1 DM" /></Field>
@@ -247,25 +215,40 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
         </Field>
       </Card>
 
-      {/* 2. Theme */}
       <Card>
         <CardTitle icon={Palette}>2 · Brand theme &amp; colours</CardTitle>
         <ThemePicker theme={theme} setTheme={setTheme} uploadedFile={uploadedFile} setUploadedFile={setUploadedFile} />
       </Card>
 
-      {/* 3. Artefacts */}
       <Card>
         <CardTitle icon={CheckSquare}>3 · Select artefacts</CardTitle>
         <ArtefactGrid selected={selected} onToggle={toggleArt} onToggleAll={toggleAll} onBulkToggle={bulkToggle} />
       </Card>
 
-      {/* Generate */}
-      <Btn full variant="primary" disabled={generating} onClick={generateAll}
+      {healthWarnings.length > 0 && (
+        <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {healthWarnings.map((w, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 12px',
+              borderRadius: 8, fontSize: 12, lineHeight: 1.5,
+              background: w.level === 'error' ? 'var(--rl)' : w.level === 'warn' ? '#FFFBEB' : '#F0F9FF',
+              border: `1px solid ${w.level === 'error' ? '#FCA5A5' : w.level === 'warn' ? '#FDE68A' : '#BAE6FD'}`,
+              color: w.level === 'error' ? '#991B1B' : w.level === 'warn' ? '#92400E' : '#0369A1',
+            }}>
+              {w.level === 'info'
+                ? <Info size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+                : <AlertTriangle size={13} style={{ flexShrink: 0, marginTop: 1 }} />}
+              {w.text}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Btn full variant="primary" disabled={generating || hasErrors} onClick={generateAll}
         style={{ padding: '12px 16px', fontSize: 14, marginBottom: 16 }}>
         {generating
           ? <><span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.65s linear infinite' }} /> Generating…</>
-          : <><Zap size={14} /> Create all selected artefacts</>
-        }
+          : <><Zap size={14} /> Create all selected artefacts</>}
       </Btn>
 
       <GenerationBanner
@@ -273,6 +256,8 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
         generating={generating}
         projectSlug={(ctx.pname || 'project').replace(/\s+/g, '-')}
         onRegenerateOne={regenerateOne}
+        amendments={amendments}
+        onAmendmentChange={(artId, text) => setAmendments(prev => ({ ...prev, [artId]: text }))}
       />
     </div>
   )

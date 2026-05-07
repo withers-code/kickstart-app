@@ -173,3 +173,64 @@ JSON array each: {audience,communicationType,purpose,frequency,channel,owner,for
     theme: ctx.theme.primary,
   }])
 }
+
+export async function genBudgetTracker(ctx, opts) {
+  const phases = await callClaudeJSON({
+    apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
+    system: 'You are a senior delivery manager and financial controller at Kickstart.',
+    user: `Generate a project budget tracker. Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope} | Team: ${ctx.team} | Tech: ${ctx.tech}${ctx.instructions?.['budget-tracker'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['budget-tracker']}` : ''}${ctx.examples?.['budget-tracker']?.text ? `\n\nEXAMPLE:\n${ctx.examples['budget-tracker'].text.slice(0, 3000)}` : ''}
+Return JSON array of 5 phases, each: {
+  phase: string,
+  items: [{category:"People|Software & Licences|Infrastructure|Travel & Expenses|Contingency", item:string, unit:string, qty:number, unitCost:number, planned:number, actual:number, forecastToComplete:number, notes:string}]
+}
+Use realistic GBP day rates (Senior Consultant £1200/day, Consultant £800/day, Developer £750/day, DM £900/day).
+Set actual to 0 (placeholder for the team to fill in).`,
+  })
+
+  const theme = ctx.theme.primary
+  const detailRows = []
+  const summaryRows = []
+
+  for (const ph of (phases || [])) {
+    let phasePlanned = 0, phaseActual = 0, phaseForecast = 0
+    for (const item of (ph.items || [])) {
+      detailRows.push([
+        ph.phase, item.category, item.item, item.unit,
+        item.qty, item.unitCost,
+        item.planned, item.actual,
+        item.forecastToComplete,
+        item.planned - item.actual - item.forecastToComplete,
+        item.notes || '',
+      ])
+      phasePlanned += Number(item.planned) || 0
+      phaseActual += Number(item.actual) || 0
+      phaseForecast += Number(item.forecastToComplete) || 0
+    }
+    const variance = phasePlanned - phaseActual - phaseForecast
+    const rag = variance < 0 ? 'Red' : variance < phasePlanned * 0.1 ? 'Amber' : 'Green'
+    summaryRows.push([ph.phase, phasePlanned, phaseActual, phaseForecast, variance, rag])
+  }
+
+  const totalPlanned = summaryRows.reduce((s, r) => s + r[1], 0)
+  const totalActual = summaryRows.reduce((s, r) => s + r[2], 0)
+  const totalForecast = summaryRows.reduce((s, r) => s + r[3], 0)
+  const totalVariance = totalPlanned - totalActual - totalForecast
+  summaryRows.push(['TOTAL', totalPlanned, totalActual, totalForecast, totalVariance, totalVariance < 0 ? 'Red' : totalVariance < totalPlanned * 0.1 ? 'Amber' : 'Green'])
+
+  return makeWb([
+    {
+      name: 'Budget Summary',
+      headers: ['Phase', 'Planned (£)', 'Actual to Date (£)', 'Forecast to Complete (£)', 'Variance (£)', 'RAG'],
+      rows: summaryRows,
+      colWidths: [22, 16, 20, 24, 14, 8],
+      theme,
+    },
+    {
+      name: 'Detailed Budget',
+      headers: ['Phase', 'Category', 'Item', 'Unit', 'Qty', 'Unit Cost (£)', 'Planned (£)', 'Actual (£)', 'Forecast to Complete (£)', 'Variance (£)', 'Notes'],
+      rows: detailRows,
+      colWidths: [18, 22, 28, 10, 6, 13, 13, 13, 24, 13, 28],
+      theme,
+    },
+  ])
+}

@@ -641,3 +641,110 @@ Return ONLY this JSON (no markdown, no extra fields):
   ]
   return buildPptxFromSlides(slides, ctx.theme, `Delivery Report`, ctx.pname || '')
 }
+
+// ── Steering Committee Pack ────────────────────────────────────────────────────
+function steeringDecisionsSlide(title, decisions, color) {
+  const BOX_H = 980000
+  const BOX_GAP = 60000
+  const cols = Math.min(decisions.length, 3)
+  const boxW = Math.floor((W - PAD * 2 - BOX_GAP * (cols - 1)) / cols)
+  let shapes = chrome(title, color)
+  decisions.slice(0, 3).forEach((d, i) => {
+    const x = PAD + i * (boxW + BOX_GAP)
+    const y = BODY_Y + 40000
+    shapes += rect(10 + i * 4, x, y, boxW, BOX_H, hex6(color))
+    shapes += textBox(11 + i * 4, x + 30000, y + 30000, boxW - 60000, BOX_H - 60000,
+      para(run(`Decision ${i + 1}`, 1600, true, 'FFFFFF'), 'l') +
+      para(run(d.decision || '', 1400, false, 'FFFFFF'), 'l') +
+      para('') +
+      para(run(`Owner: ${d.owner || ''}`, 1200, false, 'FFDE7A'), 'l') +
+      para(run(`By: ${d.deadline || ''}`, 1200, false, 'FFDE7A'), 'l') +
+      para('') +
+      para(run(`⚠ ${d.consequence || ''}`, 1200, true, 'FFB3B3'), 'l')
+    )
+  })
+  if (decisions.length > 3) {
+    const y2 = BODY_Y + BOX_H + BOX_GAP + 80000
+    decisions.slice(3, 6).forEach((d, i) => {
+      const x = PAD + i * (boxW + BOX_GAP)
+      shapes += rect(22 + i * 4, x, y2, boxW, BOX_H * 0.8, hex6(color))
+      shapes += textBox(23 + i * 4, x + 30000, y2 + 30000, boxW - 60000, BOX_H * 0.8 - 60000,
+        para(run(`Decision ${i + 4}`, 1400, true, 'FFFFFF'), 'l') +
+        para(run(d.decision || '', 1300, false, 'FFFFFF'), 'l') +
+        para(run(`${d.owner || ''} · ${d.deadline || ''}`, 1100, false, 'FFDE7A'), 'l')
+      )
+    })
+  }
+  return slideWrap(shapes)
+}
+
+function steeringFinanceSlide(title, budget, color) {
+  const rows = [
+    ['Total Budget', budget.totalBudget || 'TBC', 'Green'],
+    ['Spent to Date', budget.spent || 'TBC', budget.spentRag || 'Green'],
+    ['Forecast at Completion', budget.forecast || 'TBC', budget.forecastRag || 'Green'],
+    ['Remaining', budget.remaining || 'TBC', budget.remainingRag || 'Green'],
+    ['Contingency Used', budget.contingencyUsed || '0%', budget.contingencyRag || 'Green'],
+  ]
+  return coloredHeaderTable(
+    title, PAD, BODY_Y, W - PAD * 2,
+    [Math.floor((W - PAD * 2) * 0.45), Math.floor((W - PAD * 2) * 0.35), Math.floor((W - PAD * 2) * 0.20)],
+    ['Budget Line', 'Value', 'Status'],
+    rows.map(([label, val, rag]) => {
+      const fill = ragFill(rag)
+      return [
+        { text: label, color: '1E293B', bold: false, bg: 'FFFFFF' },
+        { text: val, color: '1E293B', bold: true, bg: 'FFFFFF' },
+        { text: rag, color: fill.textColor, bold: true, bg: fill.bg },
+      ]
+    }),
+    hex6(color)
+  )
+}
+
+export async function genPptxSteeringPack(ctx, opts) {
+  const color = ctx.theme?.primary || '#4F46E5'
+  const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  const d = await callClaudeJSON({
+    ...opts,
+    system: 'You are a senior delivery manager preparing a steering committee pack. Be concise and executive-focused.',
+    user: `Generate steering committee pack content. Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope} | Team: ${ctx.team} | Start: ${ctx.start}${ctx.sow ? `\n\nSOW:\n${ctx.sow.slice(0, 3000)}` : ''}${ctx.instructions?.['steering-pack'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['steering-pack']}` : ''}
+Return ONLY this JSON:
+{
+  "overallRag": "Green|Amber|Red",
+  "reportingPeriod": "e.g. Sprint 3 — Week 12",
+  "keyStats": [{"label":"Sprints Complete","value":"3 of 8"},{"label":"Budget Consumed","value":"36%"},{"label":"Open Risks","value":"4"},{"label":"Milestones On Track","value":"3 of 5"}],
+  "ragBoxes": [{"area":"Schedule","status":"Green|Amber|Red","headline":"short summary"},{"area":"Budget","status":"Green|Amber|Red","headline":"short summary"},{"area":"Quality","status":"Green|Amber|Red","headline":"short summary"},{"area":"Risk","status":"Green|Amber|Red","headline":"short summary"}],
+  "decisions": [{"decision":"decision text — be specific","owner":"role or name","deadline":"DD/MM/YYYY","consequence":"what happens if not decided"} x3-5],
+  "budget": {"totalBudget":"£XXX,XXX","spent":"£XX,XXX","forecast":"£XXX,XXX","remaining":"£XX,XXX","contingencyUsed":"X%","spentRag":"Green","forecastRag":"Green","remainingRag":"Green","contingencyRag":"Green"},
+  "risks": [{"id":"R1","description":"risk description","severity":"High|Medium|Low","recommendation":"recommended action"} x3],
+  "next30Days": ["milestone or deliverable" x5]
+}`,
+  })
+
+  const overviewRows = [
+    ['Project', ctx.pname || '', null],
+    ['Client', ctx.cname || '', null],
+    ['Reporting Period', d.reportingPeriod || date, null],
+    ['Overall Status', d.overallRag || 'Green', d.overallRag],
+    ...(d.keyStats || []).map(s => [s.label, s.value, null]),
+  ]
+
+  const slides = [
+    overviewTableSlide('Project Overview', overviewRows, color),
+    execSummarySlide('RAG Status Dashboard',
+      d.ragBoxes || [{ area: 'Schedule', status: 'Green', headline: 'On Track' }],
+      [], [],
+      (d.keyStats || []).map(s => ({ label: s.label, value: s.value })),
+      color
+    ),
+    steeringDecisionsSlide('Decisions Required', d.decisions || [], color),
+    steeringFinanceSlide('Financial Summary', d.budget || {}, color),
+    risksIssuesSlide('Key Risks for Escalation',
+      (d.risks || []).map(r => ({ id: r.id, text: r.description, type: 'Risk', severity: r.severity, owner: '', mitigation: r.recommendation, status: 'Open' })),
+      color
+    ),
+    contentSlide('Next 30 Days', d.next30Days || [], color),
+  ]
+  return buildPptxFromSlides(slides, ctx.theme, 'Steering Committee Pack', ctx.pname || '')
+}
