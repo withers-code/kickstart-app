@@ -1,10 +1,17 @@
 import JSZip from 'jszip'
 import { callClaudeJSON } from './api.js'
 
-const W = 9144000
-const H = 6858000
-const PAD = 457200
-const HDR = 685800
+// ── Constants (16:9 widescreen) ───────────────────────────────────────────────
+const W = 12192000   // 13.333 in
+const H = 6858000    // 7.5 in
+const PAD = 457200   // 0.5 in
+const FOOTER_H = 160000
+const TITLE_Y = 200000
+const TITLE_H = 400000
+const RULE_Y  = 625000
+const RULE_H  = 27432
+const BODY_Y  = 700000
+const BODY_H  = H - BODY_Y - FOOTER_H - 60000  // ≈5838000
 
 // ── XML helpers ───────────────────────────────────────────────────────────────
 function hex6(h) { return (h || '#4F46E5').replace('#', '').toUpperCase().padEnd(6, '0') }
@@ -38,6 +45,15 @@ ${spTree}
 <p:clrMapOvr><a:masterClr/></p:clrMapOvr></p:sld>`
 }
 
+// ── Slide chrome (title + rule + footer) ──────────────────────────────────────
+function chrome(title, color) {
+  return (
+    textBox(2, PAD, TITLE_Y, W - PAD*2, TITLE_H, para(run(title, 2800, true, hex6(color)))) +
+    rect(3, PAD, RULE_Y, W - PAD*2, RULE_H, hex6(color)) +
+    rect(4, 0, H - FOOTER_H, W, FOOTER_H, hex6(color))
+  )
+}
+
 // ── Table helpers ─────────────────────────────────────────────────────────────
 function ragFill(rag) {
   const r = String(rag || '').toLowerCase()
@@ -46,21 +62,38 @@ function ragFill(rag) {
   if (r === 'red')    return { bg: 'FEE2E2', textColor: '991B1B' }
   return { bg: 'F1F5F9', textColor: '475569' }
 }
-function statusFill(s) {
+function ragBoxFill(rag) {
+  const r = String(rag || '').toLowerCase()
+  if (r === 'green')  return { bg: '22C55E', textColor: 'FFFFFF' }
+  if (r === 'amber')  return { bg: 'F59E0B', textColor: 'FFFFFF' }
+  if (r === 'red')    return { bg: 'EF4444', textColor: 'FFFFFF' }
+  return { bg: 'CBD5E1', textColor: '1E293B' }
+}
+function statusCellFill(s) {
   const sl = String(s || '').toLowerCase()
-  if (sl === 'complete')           return { bg: 'DCFCE7', textColor: '166534' }
-  if (sl.includes('on track'))     return { bg: 'DBEAFE', textColor: '1E40AF' }
-  if (sl.includes('at risk'))      return { bg: 'FEF9C3', textColor: '854D0E' }
-  if (sl === 'delayed')            return { bg: 'FEE2E2', textColor: '991B1B' }
-  return { bg: 'F1F5F9', textColor: '475569' }
+  if (sl === 'complete')    return { bg: 'DCFCE7', textColor: '166534' }
+  if (sl === 'in progress') return { bg: 'DBEAFE', textColor: '1E40AF' }
+  if (sl === 'at risk')     return { bg: 'FEF9C3', textColor: '854D0E' }
+  if (sl === 'blocked' || sl === 'overdue') return { bg: 'FEE2E2', textColor: '991B1B' }
+  if (sl === 'not started') return { bg: 'F1F5F9', textColor: '64748B' }
+  if (sl === 'open')        return { bg: 'FEF9C3', textColor: '854D0E' }
+  if (sl === 'closed')      return { bg: 'F1F5F9', textColor: '64748B' }
+  return { bg: 'F8FAFC', textColor: '475569' }
+}
+function severityFill(s) {
+  const sl = String(s || '').toLowerCase()
+  if (sl === 'high')   return { bg: 'FEE2E2', textColor: '991B1B' }
+  if (sl === 'medium') return { bg: 'FEF9C3', textColor: '854D0E' }
+  if (sl === 'low')    return { bg: 'F1F5F9', textColor: '475569' }
+  return { bg: 'F8FAFC', textColor: '475569' }
 }
 
-function tblCell(text, { bg = 'FFFFFF', textColor = '1A1917', bold = false, sz = 1300 } = {}) {
+function tblCell(text, { bg = 'FFFFFF', textColor = '1A1917', bold = false, sz = 1200, align = 'l' } = {}) {
   const b = 'E2E8F0'
   const borders = ['L','R','T','B'].map(d =>
     `<a:ln${d} w="9525" cmpd="sng"><a:solidFill><a:srgbClr val="${b}"/></a:solidFill></a:ln${d}>`
   ).join('')
-  return `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>${para(run(String(text||''), sz, bold, textColor))}</a:txBody><a:tcPr>${borders}<a:solidFill><a:srgbClr val="${bg}"/></a:solidFill></a:tcPr></a:tc>`
+  return `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>${para(run(String(text||''), sz, bold, textColor), align)}</a:txBody><a:tcPr>${borders}<a:solidFill><a:srgbClr val="${bg}"/></a:solidFill></a:tcPr></a:tc>`
 }
 
 function tblFrame(id, x, y, w, h, colWidths, tableRows) {
@@ -76,71 +109,216 @@ function tblFrame(id, x, y, w, h, colWidths, tableRows) {
 </a:graphicData></a:graphic></p:graphicFrame>`
 }
 
+function coloredHeaderTable(id, x, y, tblW, colWidths, headers, dataRows, headerColor) {
+  const hdrH = 480000
+  const n = Math.max(1, dataRows.length)
+  const dataH = Math.floor((BODY_H - hdrH) / n)
+  const tblH = hdrH + dataH * n
+  const headerRow = {
+    height: hdrH,
+    cells: headers.map(h => tblCell(h, { bg: hex6(headerColor), textColor: 'FFFFFF', bold: true, sz: 1300 })),
+  }
+  const rows = dataRows.map(cells => ({ height: dataH, cells }))
+  return { xml: tblFrame(id, x, y, tblW, tblH, colWidths, [headerRow, ...rows]), tblH }
+}
+
 // ── Slide layouts ─────────────────────────────────────────────────────────────
-function titleSlide(title, date, color) {
-  const hdr = 1828800
+
+// Full-bleed color title slide
+function titleSlide(title, subtitle, color) {
+  const topH = Math.floor(H * 0.72)
+  const barH = Math.floor(H * 0.09)
+  const darkH = H - topH - barH
+  const darkColor = '1E293B'
+  const barColor = hex6(color)
   return slideWrap(
-    rect(2, 0, 0, W, hdr, color) +
-    textBox(3, PAD, 457200, W - PAD*2, 914400, para(run(title, 4000, true, 'FFFFFF'))) +
-    textBox(4, PAD, hdr + 274320, W - PAD*2, 457200, para(run(date, 1800, false, 'CCCCCC')))
+    rect(2, 0, 0, W, topH, hex6(color)) +
+    textBox(3, PAD * 2, Math.floor(topH * 0.30), W - PAD * 4, Math.floor(topH * 0.55),
+      para(run(title, 4400, true, 'FFFFFF'))) +
+    rect(4, 0, topH, W, barH, barColor) +
+    textBox(5, PAD * 2, topH + Math.floor(barH * 0.25), W - PAD * 4, Math.floor(barH * 0.6),
+      para(run(subtitle, 1800, false, 'FFFFFF'))) +
+    rect(6, 0, topH + barH, W, darkH, darkColor)
   )
 }
 
+// Standard bullets slide
 function contentSlide(title, bullets, color) {
-  const bodyY = HDR + 228600
-  const bodyH = H - bodyY - 548640
-  const bParas = (bullets || []).map(b => para(run('•  ' + b, 1600, false, '1A1917'))).join('')
-    || para(run('', 1600, false, '1A1917'))
+  const bParas = (bullets || []).map(b =>
+    para(run('•  ' + b, 1600, false, '1A1917'))
+  ).join('') || para(run('', 1600, false, '1A1917'))
   return slideWrap(
-    rect(2, 0, 0, W, HDR, color) +
-    textBox(3, PAD, 137160, W - PAD*2, HDR - 137160, para(run(title, 2600, true, 'FFFFFF'))) +
-    textBox(4, PAD, bodyY, W - PAD*2, bodyH, bParas)
+    chrome(title, color) +
+    textBox(5, PAD, BODY_Y, W - PAD*2, BODY_H, bParas)
   )
 }
 
-// Left accent strip + large summary text
-function highlightSlide(title, text, color) {
-  const bodyY = HDR + 274320
-  const bodyH = H - bodyY - 548640
-  const stripW = 27432
-  const textX = PAD + stripW + 228600
+// Exec summary — 4 RAG status boxes + highlights/blockers + stats panel
+function execSummarySlide(title, ragBoxes, highlights, blockers, weekStats, color) {
+  const GAP = 91440
+  const boxCount = ragBoxes.length
+  const totalW = W - PAD * 2
+  const boxW = Math.floor((totalW - GAP * (boxCount - 1)) / boxCount)
+  const boxH = 685800
+  const labelH = Math.floor(boxH * 0.38)
+  const statusH = Math.floor(boxH * 0.52)
+
+  let boxXml = ''
+  ragBoxes.forEach((box, i) => {
+    const fills = ragBoxFill(box.status)
+    const x = PAD + i * (boxW + GAP)
+    const y = BODY_Y
+    const idBase = 10 + i * 3
+    boxXml +=
+      rect(idBase, x, y, boxW, boxH, fills.bg) +
+      textBox(idBase+1, x, y + Math.floor(boxH*0.08), boxW, labelH,
+        para(run(box.label || '', 1500, false, fills.textColor), 'ctr')) +
+      textBox(idBase+2, x, y + labelH + Math.floor(boxH*0.06), boxW, statusH,
+        para(run((box.status || '').toUpperCase(), 2200, true, fills.textColor), 'ctr'))
+  })
+
+  const twoColY = BODY_Y + boxH + 160000
+  const twoColH = BODY_H - boxH - 160000
+  const midX = PAD + Math.floor(totalW * 0.55)
+  const leftW = midX - PAD - GAP
+  const rightW = totalW - (midX - PAD)
+
+  const hlParas = [
+    para(run('Key Highlights', 1600, true, hex6(color))),
+    ...(highlights || []).map(h => para(run('•  ' + h, 1400, false, '1A1917'))),
+    para(run('', 1200, false, '1A1917')),
+    para(run('Blockers / Concerns', 1600, true, hex6(color))),
+    ...(blockers || []).map(b => para(run('•  ' + b, 1400, false, '1A1917'))),
+  ].join('')
+
+  const statsParas = [
+    para(run('Week at a Glance', 1600, true, hex6(color))),
+    para(run('', 1000, false, '1A1917')),
+    ...(weekStats
+      ? [
+          para(run('Sprint:  ' + (weekStats.sprint || 'TBC'), 1400, false, '374151')),
+          para(run('Stories Completed:  ' + (weekStats.storiesCompleted || 'TBC'), 1400, false, '374151')),
+          para(run('Story Points Burned:  ' + (weekStats.storyPoints || 'TBC'), 1400, false, '374151')),
+          para(run('Defects Open:  ' + (weekStats.defectsOpen || '0'), 1400, false, '374151')),
+          para(run('% Complete:  ' + (weekStats.percentComplete || 'TBC'), 1400, false, '374151')),
+        ]
+      : []),
+  ].join('')
+
   return slideWrap(
-    rect(2, 0, 0, W, HDR, color) +
-    textBox(3, PAD, 137160, W - PAD*2, HDR - 137160, para(run(title, 2600, true, 'FFFFFF'))) +
-    rect(4, PAD, bodyY, stripW, bodyH, hex6(color)) +
-    textBox(5, textX, bodyY, W - textX - PAD, bodyH, para(run(text || '', 1900, false, '1A1917')))
+    chrome(title, color) +
+    boxXml +
+    textBox(30, PAD, twoColY, leftW, twoColH, hlParas) +
+    rect(31, midX, twoColY, GAP, twoColH, 'F1F5F9') +
+    rect(32, midX + GAP, twoColY, rightW - GAP, twoColH, 'F1F5F9') +
+    textBox(33, midX + GAP + Math.floor(PAD*0.5), twoColY + 120000, rightW - GAP - PAD, twoColH - 240000, statsParas)
   )
 }
 
-// Two equal columns with sub-headings
-function twoColSlide(title, leftTitle, leftBullets, rightTitle, rightBullets, color) {
-  const divX = Math.floor(W / 2) - 9000
-  const colW = divX - PAD - 91440
-  const midX = divX + 18000
-  const bodyY = HDR + 228600
-  const subH = 320000
-  const listY = bodyY + subH + 91440
-  const listH = H - listY - 548640
-  const lPars = (leftBullets || []).map(b => para(run('•  ' + b, 1400, false, '1A1917'))).join('')
-  const rPars = (rightBullets || []).map(b => para(run('•  ' + b, 1400, false, '1A1917'))).join('')
-  return slideWrap(
-    rect(2, 0, 0, W, HDR, color) +
-    textBox(3, PAD, 137160, W - PAD*2, HDR - 137160, para(run(title, 2600, true, 'FFFFFF'))) +
-    rect(4, divX, bodyY, 18000, bodyY + listH + subH + 91440 - bodyY, 'E2E8F0') +
-    textBox(5, PAD, bodyY, colW, subH, para(run(leftTitle || '', 1700, true, hex6(color)))) +
-    textBox(6, PAD, listY, colW, listH, lPars) +
-    textBox(7, midX, bodyY, colW, subH, para(run(rightTitle || '', 1700, true, hex6(color)))) +
-    textBox(8, midX, listY, colW, listH, rPars)
-  )
-}
-
-// Key-value table (no header — shaded keys column)
-function overviewTableSlide(title, rows, color) {
-  const tblY = HDR + 228600
+// Sprint / deliverable progress table
+function sprintProgressSlide(title, items, color) {
   const tblW = W - PAD * 2
-  const rowH = Math.min(530000, Math.floor((H - tblY - 548640) / Math.max(1, rows.length)))
+  const cols = [
+    Math.floor(tblW * 0.28), Math.floor(tblW * 0.12),
+    Math.floor(tblW * 0.13), Math.floor(tblW * 0.09),
+    Math.floor(tblW * 0.13), Math.floor(tblW * 0.25),
+  ]
+  const headers = ['Deliverable / Story', 'Owner', 'Status', '% Done', 'Target Date', 'Notes']
+  const dataRows = (items || []).map(r => ({
+    cells: [
+      tblCell(r.deliverable || '', { bg: 'FFFFFF', sz: 1200 }),
+      tblCell(r.owner || '', { bg: 'F8FAFC', textColor: '475569', sz: 1200 }),
+      tblCell(r.status || '', { ...statusCellFill(r.status), bold: true, sz: 1200 }),
+      tblCell(r.percentDone || '', { bg: 'FFFFFF', textColor: '374151', sz: 1200, align: 'ctr' }),
+      tblCell(r.targetDate || '', { bg: 'F8FAFC', textColor: '475569', sz: 1200 }),
+      tblCell(r.notes || '', { bg: 'FFFFFF', textColor: '6B7280', sz: 1100 }),
+    ],
+  }))
+  const { xml } = coloredHeaderTable(10, PAD, BODY_Y, tblW, cols, headers, dataRows.map(r => r.cells), color)
+  return slideWrap(chrome(title, color) + xml)
+}
+
+// Risks & Issues table (ID, Risk/Issue, Type, Severity, Owner, Mitigation, Status)
+function risksIssuesSlide(title, items, color) {
+  const tblW = W - PAD * 2
+  const cols = [
+    Math.floor(tblW * 0.05), Math.floor(tblW * 0.22),
+    Math.floor(tblW * 0.07), Math.floor(tblW * 0.09),
+    Math.floor(tblW * 0.10), Math.floor(tblW * 0.35),
+    Math.floor(tblW * 0.12),
+  ]
+  const headers = ['ID', 'Risk / Issue', 'Type', 'Severity', 'Owner', 'Mitigation / Action', 'Status']
+  const dataRows = (items || []).map(r => [
+    tblCell(r.id || '', { bg: 'F8FAFC', textColor: '475569', sz: 1200, align: 'ctr' }),
+    tblCell(r.text || r.risk || '', { bg: 'FFFFFF', sz: 1200 }),
+    tblCell(r.type || 'Risk', { bg: 'F8FAFC', textColor: '475569', sz: 1200, align: 'ctr' }),
+    tblCell(r.severity || '', { ...severityFill(r.severity), bold: true, sz: 1200, align: 'ctr' }),
+    tblCell(r.owner || '', { bg: 'FFFFFF', textColor: '475569', sz: 1200 }),
+    tblCell(r.mitigation || '', { bg: 'FAFAFA', textColor: '374151', sz: 1100 }),
+    tblCell(r.status || '', { ...statusCellFill(r.status), bold: true, sz: 1200, align: 'ctr' }),
+  ])
+  const { xml } = coloredHeaderTable(10, PAD, BODY_Y, tblW, cols, headers, dataRows, color)
+  return slideWrap(chrome(title, color) + xml)
+}
+
+// Upcoming week — two columns with multiple sections
+function upcomingWeekSlide(title, priorities, milestones, decisions, dependencies, color) {
+  const GAP = 91440
+  const totalW = W - PAD * 2
+  const colW = Math.floor(totalW / 2) - Math.floor(GAP / 2)
+  const rightX = PAD + colW + GAP
+
+  const leftParas = [
+    para(run('Next Week Priorities', 1600, true, hex6(color))),
+    ...(priorities || []).map(p => para(run('•  ' + p, 1400, false, '1A1917'))),
+    para(run('', 1000, false, '1A1917')),
+    para(run('Key Milestones Ahead', 1600, true, hex6(color))),
+    ...(milestones || []).map(m => para(run('•  ' + m, 1400, false, '1A1917'))),
+  ].join('')
+
+  const rightParas = [
+    para(run('Decisions Needed', 1600, true, hex6(color))),
+    ...(decisions || []).map(d => para(run('•  ' + d, 1400, false, '1A1917'))),
+    para(run('', 1000, false, '1A1917')),
+    para(run('Dependencies', 1600, true, hex6(color))),
+    ...(dependencies || []).map(d => para(run('•  ' + d, 1400, false, '1A1917'))),
+  ].join('')
+
+  return slideWrap(
+    chrome(title, color) +
+    textBox(5, PAD, BODY_Y, colW, BODY_H, leftParas) +
+    rect(6, PAD + colW, BODY_Y, GAP, BODY_H, 'E2E8F0') +
+    textBox(7, rightX, BODY_Y, colW, BODY_H, rightParas)
+  )
+}
+
+// Action log table
+function actionLogSlide(title, items, color) {
+  const tblW = W - PAD * 2
+  const cols = [
+    Math.floor(tblW * 0.05), Math.floor(tblW * 0.38),
+    Math.floor(tblW * 0.12), Math.floor(tblW * 0.13),
+    Math.floor(tblW * 0.12), Math.floor(tblW * 0.20),
+  ]
+  const headers = ['#', 'Action', 'Owner', 'Due Date', 'Priority', 'Status']
+  const dataRows = (items || []).map(r => [
+    tblCell(r.id || '', { bg: 'F8FAFC', textColor: '475569', sz: 1200, align: 'ctr' }),
+    tblCell(r.action || '', { bg: 'FFFFFF', sz: 1200 }),
+    tblCell(r.owner || '', { bg: 'F8FAFC', textColor: '475569', sz: 1200 }),
+    tblCell(r.dueDate || '', { bg: 'FFFFFF', textColor: '475569', sz: 1200 }),
+    tblCell(r.priority || '', { ...severityFill(r.priority), bold: true, sz: 1200, align: 'ctr' }),
+    tblCell(r.status || '', { ...statusCellFill(r.status), bold: true, sz: 1200, align: 'ctr' }),
+  ])
+  const { xml } = coloredHeaderTable(10, PAD, BODY_Y, tblW, cols, headers, dataRows, color)
+  return slideWrap(chrome(title, color) + xml)
+}
+
+// Key-value overview table (for kick-off / delivery)
+function overviewTableSlide(title, rows, color) {
+  const tblW = W - PAD * 2
+  const rowH = Math.min(530000, Math.floor(BODY_H / Math.max(1, rows.length)))
   const tblH = rowH * rows.length
-  const col1W = Math.floor(tblW * 0.28)
+  const col1W = Math.floor(tblW * 0.25)
   const tableRows = rows.map(([key, value, rag]) => ({
     height: rowH,
     cells: [
@@ -151,107 +329,64 @@ function overviewTableSlide(title, rows, color) {
     ],
   }))
   return slideWrap(
-    rect(2, 0, 0, W, HDR, color) +
-    textBox(3, PAD, 137160, W - PAD*2, HDR - 137160, para(run(title, 2600, true, 'FFFFFF'))) +
-    tblFrame(10, PAD, tblY, tblW, tblH, [col1W, tblW - col1W], tableRows)
+    chrome(title, color) +
+    tblFrame(10, PAD, BODY_Y, tblW, tblH, [col1W, tblW - col1W], tableRows)
   )
 }
 
-// Colored-header table with RAG cell per row
+// Two equal columns
+function twoColSlide(title, leftTitle, leftBullets, rightTitle, rightBullets, color) {
+  const GAP = 91440
+  const totalW = W - PAD * 2
+  const colW = Math.floor(totalW / 2) - Math.floor(GAP / 2)
+  const rightX = PAD + colW + GAP
+  const subH = 340000
+  const listY = BODY_Y + subH + 80000
+  const listH = BODY_H - subH - 80000
+  const lPars = (leftBullets || []).map(b => para(run('•  ' + b, 1400, false, '1A1917'))).join('')
+  const rPars = (rightBullets || []).map(b => para(run('•  ' + b, 1400, false, '1A1917'))).join('')
+  return slideWrap(
+    chrome(title, color) +
+    textBox(5, PAD, BODY_Y, colW, subH, para(run(leftTitle || '', 1700, true, hex6(color)))) +
+    textBox(6, PAD, listY, colW, listH, lPars) +
+    rect(7, PAD + colW, BODY_Y, GAP, BODY_H, 'E2E8F0') +
+    textBox(8, rightX, BODY_Y, colW, subH, para(run(rightTitle || '', 1700, true, hex6(color)))) +
+    textBox(9, rightX, listY, colW, listH, rPars)
+  )
+}
+
+// Colored-header data table (generic)
 function ragTableSlide(title, risks, color) {
-  const tblY = HDR + 228600
   const tblW = W - PAD * 2
-  const hdrH = 500000
-  const n = Math.max(1, (risks || []).length)
-  const dataH = Math.floor((H - tblY - 548640 - hdrH) / n)
-  const tblH = hdrH + dataH * n
   const cols = [
-    Math.floor(tblW * 0.34), Math.floor(tblW * 0.08),
-    Math.floor(tblW * 0.42), Math.floor(tblW * 0.16),
+    Math.floor(tblW * 0.32), Math.floor(tblW * 0.08),
+    Math.floor(tblW * 0.40), Math.floor(tblW * 0.20),
   ]
-  const headerRow = {
-    height: hdrH,
-    cells: ['Risk / Issue', 'RAG', 'Mitigation', 'Owner'].map(h =>
-      tblCell(h, { bg: hex6(color), textColor: 'FFFFFF', bold: true })
-    ),
-  }
-  const dataRows = (risks || []).map(r => ({
-    height: dataH,
-    cells: [
-      tblCell(r.text || r.risk || '', { bg: 'FFFFFF', sz: 1200 }),
-      tblCell(r.rag || '', { ...ragFill(r.rag), bold: true, sz: 1200 }),
-      tblCell(r.mitigation || '', { bg: 'FAFAFA', textColor: '475569', sz: 1200 }),
-      tblCell(r.owner || '', { bg: 'FFFFFF', textColor: '475569', sz: 1200 }),
-    ],
-  }))
-  return slideWrap(
-    rect(2, 0, 0, W, HDR, color) +
-    textBox(3, PAD, 137160, W - PAD*2, HDR - 137160, para(run(title, 2600, true, 'FFFFFF'))) +
-    tblFrame(10, PAD, tblY, tblW, tblH, cols, [headerRow, ...dataRows])
-  )
+  const headers = ['Risk / Issue', 'RAG', 'Mitigation', 'Owner']
+  const dataRows = (risks || []).map(r => [
+    tblCell(r.text || r.risk || '', { bg: 'FFFFFF', sz: 1200 }),
+    tblCell(r.rag || '', { ...ragFill(r.rag), bold: true, sz: 1200, align: 'ctr' }),
+    tblCell(r.mitigation || '', { bg: 'FAFAFA', textColor: '475569', sz: 1200 }),
+    tblCell(r.owner || '', { bg: 'FFFFFF', textColor: '475569', sz: 1200 }),
+  ])
+  const { xml } = coloredHeaderTable(10, PAD, BODY_Y, tblW, cols, headers, dataRows, color)
+  return slideWrap(chrome(title, color) + xml)
 }
 
-// Milestone tracker table with status-colored cells
 function milestoneTableSlide(title, items, color) {
-  const tblY = HDR + 228600
   const tblW = W - PAD * 2
-  const hdrH = 500000
-  const n = Math.max(1, (items || []).length)
-  const dataH = Math.floor((H - tblY - 548640 - hdrH) / n)
-  const tblH = hdrH + dataH * n
   const cols = [Math.floor(tblW * 0.55), Math.floor(tblW * 0.20), Math.floor(tblW * 0.25)]
-  const headerRow = {
-    height: hdrH,
-    cells: ['Milestone', 'Planned Date', 'Status'].map(h =>
-      tblCell(h, { bg: hex6(color), textColor: 'FFFFFF', bold: true })
-    ),
-  }
-  const dataRows = (items || []).map(m => ({
-    height: dataH,
-    cells: [
-      tblCell(m.name || m.milestone || '', { bg: 'FFFFFF', sz: 1200 }),
-      tblCell(m.date || m.plannedDate || '', { bg: 'F8FAFC', textColor: '475569', sz: 1200 }),
-      tblCell(m.status || '', { ...statusFill(m.status), bold: true, sz: 1200 }),
-    ],
-  }))
-  return slideWrap(
-    rect(2, 0, 0, W, HDR, color) +
-    textBox(3, PAD, 137160, W - PAD*2, HDR - 137160, para(run(title, 2600, true, 'FFFFFF'))) +
-    tblFrame(10, PAD, tblY, tblW, tblH, cols, [headerRow, ...dataRows])
-  )
+  const headers = ['Milestone', 'Planned Date', 'Status']
+  const dataRows = (items || []).map(m => [
+    tblCell(m.name || m.milestone || '', { bg: 'FFFFFF', sz: 1200 }),
+    tblCell(m.date || m.plannedDate || '', { bg: 'F8FAFC', textColor: '475569', sz: 1200 }),
+    tblCell(m.status || '', { ...statusCellFill(m.status), bold: true, sz: 1200, align: 'ctr' }),
+  ])
+  const { xml } = coloredHeaderTable(10, PAD, BODY_Y, tblW, cols, headers, dataRows, color)
+  return slideWrap(chrome(title, color) + xml)
 }
 
-// Decisions table
-function decisionsTableSlide(title, decisions, color) {
-  const tblY = HDR + 228600
-  const tblW = W - PAD * 2
-  const hdrH = 500000
-  const n = Math.max(1, (decisions || []).length)
-  const dataH = Math.floor((H - tblY - 548640 - hdrH) / n)
-  const tblH = hdrH + dataH * n
-  const cols = [Math.floor(tblW * 0.55), Math.floor(tblW * 0.25), Math.floor(tblW * 0.20)]
-  const headerRow = {
-    height: hdrH,
-    cells: ['Decision Required', 'Owner', 'Due Date'].map(h =>
-      tblCell(h, { bg: hex6(color), textColor: 'FFFFFF', bold: true })
-    ),
-  }
-  const dataRows = (decisions || []).map(d => ({
-    height: dataH,
-    cells: [
-      tblCell(d.text || d.decision || '', { bg: 'FFFFFF', sz: 1200 }),
-      tblCell(d.owner || '', { bg: 'F8FAFC', textColor: '475569', sz: 1200 }),
-      tblCell(d.due || d.dueDate || '', { bg: 'FFFFFF', textColor: '475569', sz: 1200 }),
-    ],
-  }))
-  return slideWrap(
-    rect(2, 0, 0, W, HDR, color) +
-    textBox(3, PAD, 137160, W - PAD*2, HDR - 137160, para(run(title, 2600, true, 'FFFFFF'))) +
-    tblFrame(10, PAD, tblY, tblW, tblH, cols, [headerRow, ...dataRows])
-  )
-}
-
-// ─── PPTX package XML ─────────────────────────────────────────────────────────
+// ── PPTX package XML ──────────────────────────────────────────────────────────
 function contentTypes(n) {
   const overrides = Array.from({length: n}, (_, i) =>
     `<Override PartName="/ppt/slides/slide${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`
@@ -266,34 +401,28 @@ function contentTypes(n) {
 <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
 ${overrides}</Types>`
 }
-
 const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
 </Relationships>`
-
 const slideRel = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
 </Relationships>`
-
 const slideLayoutXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" type="blank" preserve="1">
 <p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
 <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
 </p:spTree></p:cSld><p:clrMapOvr><a:masterClr/></p:clrMapOvr></p:sldLayout>`
-
 const slideLayoutRel = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
 </Relationships>`
-
 const slideMasterRel = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
 <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>
 </Relationships>`
-
 function slideMasterXml(color) {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
@@ -304,19 +433,18 @@ function slideMasterXml(color) {
 <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
 <p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst>
 <p:txStyles>
-<p:titleStyle><a:lvl1pPr><a:defRPr sz="4400" b="1"><a:solidFill><a:srgbClr val="${hex6(color)}"/></a:solidFill><a:latin typeface="Calibri"/></a:defRPr></a:lvl1pPr></p:titleStyle>
-<p:bodyStyle><a:lvl1pPr><a:defRPr sz="2000"><a:latin typeface="Calibri"/></a:defRPr></a:lvl1pPr></p:bodyStyle>
+<p:titleStyle><a:lvl1pPr><a:defRPr sz="3200" b="1"><a:solidFill><a:srgbClr val="${hex6(color)}"/></a:solidFill><a:latin typeface="Calibri"/></a:defRPr></a:lvl1pPr></p:titleStyle>
+<p:bodyStyle><a:lvl1pPr><a:defRPr sz="1800"><a:latin typeface="Calibri"/></a:defRPr></a:lvl1pPr></p:bodyStyle>
 <p:otherStyle><a:defPPr><a:defRPr><a:latin typeface="Calibri"/></a:defRPr></a:defPPr></p:otherStyle>
 </p:txStyles></p:sldMaster>`
 }
-
 function themeXml(color) {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Theme">
 <a:themeElements>
 <a:clrScheme name="Scheme">
 <a:dk1><a:srgbClr val="000000"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1>
-<a:dk2><a:srgbClr val="1F3864"/></a:dk2><a:lt2><a:srgbClr val="F3F3F3"/></a:lt2>
+<a:dk2><a:srgbClr val="1E293B"/></a:dk2><a:lt2><a:srgbClr val="F3F3F3"/></a:lt2>
 <a:accent1><a:srgbClr val="${hex6(color)}"/></a:accent1>
 <a:accent2><a:srgbClr val="ED7D31"/></a:accent2><a:accent3><a:srgbClr val="A9D18E"/></a:accent3>
 <a:accent4><a:srgbClr val="4472C4"/></a:accent4><a:accent5><a:srgbClr val="5C9BD5"/></a:accent5>
@@ -335,18 +463,16 @@ function themeXml(color) {
 </a:fmtScheme>
 </a:themeElements></a:theme>`
 }
-
 function presentationXml(n) {
   const ids = Array.from({length: n}, (_, i) => `<p:sldId id="${256+i}" r:id="rId${i+2}"/>`).join('')
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" saveSubsetFonts="1">
 <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>
 <p:sldIdLst>${ids}</p:sldIdLst>
-<p:sldSz cx="${W}" cy="${H}" type="screen4x3"/>
-<p:notesSz cx="${H}" cy="${W}"/>
+<p:sldSz cx="${W}" cy="${H}" type="screen16x9"/>
+<p:notesSz cx="6858000" cy="9144000"/>
 </p:presentation>`
 }
-
 function presentationRels(n) {
   const slides = Array.from({length: n}, (_, i) =>
     `<Relationship Id="rId${i+2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${i+1}.xml"/>`
@@ -357,11 +483,11 @@ function presentationRels(n) {
 ${slides}</Relationships>`
 }
 
-// ─── Builder ──────────────────────────────────────────────────────────────────
-async function buildPptxFromSlides(slideXmls, theme, deckTitle) {
+// ── Builder ───────────────────────────────────────────────────────────────────
+async function buildPptxFromSlides(slideXmls, theme, deckTitle, deckSubtitle) {
   const color = theme?.primary || '#4F46E5'
-  const date = new Date().toLocaleDateString('en-GB')
-  const allSlides = [titleSlide(deckTitle, date, color), ...slideXmls]
+  const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  const allSlides = [titleSlide(deckTitle, deckSubtitle || `Week Ending: ${date}`, color), ...slideXmls]
   const n = allSlides.length
   const zip = new JSZip()
   zip.file('[Content_Types].xml', contentTypes(n))
@@ -380,12 +506,58 @@ async function buildPptxFromSlides(slideXmls, theme, deckTitle) {
   return zip.generateAsync({ type: 'arraybuffer' })
 }
 
-// ─── Exports ──────────────────────────────────────────────────────────────────
+// ── Exports ───────────────────────────────────────────────────────────────────
+export async function genPptxStatusReport(ctx, opts) {
+  const color = ctx.theme?.primary || '#4F46E5'
+  const date = new Date().toLocaleDateString('en-GB')
+  const d = await callClaudeJSON({
+    ...opts,
+    user: `Generate a weekly delivery status report presentation. Be specific and professional — write as a senior project manager would.
+Project: ${ctx.pname} | Client: ${ctx.cname} | DM: ${ctx.dm || 'TBC'} | Method: ${ctx.method || 'Agile'}
+Scope: ${ctx.scope}${ctx.sow ? `\n\nStatement of Work:\n${ctx.sow.slice(0,2500)}` : ''}
+${ctx.instructions?.['status-report'] ? `\nCUSTOM INSTRUCTIONS: ${ctx.instructions['status-report']}` : ''}
+
+Return ONLY this exact JSON (no markdown fences, no extra fields):
+{
+  "ragBoxes": [
+    {"label":"Overall","status":"Green|Amber|Red"},
+    {"label":"Schedule","status":"Green|Amber|Red"},
+    {"label":"Budget","status":"Green|Amber|Red"},
+    {"label":"Quality","status":"Green|Amber|Red"}
+  ],
+  "highlights": ["string x3-4"],
+  "blockers": ["string x2-3"],
+  "weekStats": {"sprint":"X of Y","storiesCompleted":"X / Y","storyPoints":"X / Y","defectsOpen":"X","percentComplete":"X%"},
+  "sprintProgress": [
+    {"deliverable":"string","owner":"string","status":"Complete|In Progress|Not Started|At Risk|Blocked","percentDone":"X%","targetDate":"DD/MM/YYYY","notes":"string"}
+  ],
+  "risks": [
+    {"id":"R1","text":"string","type":"Risk|Issue","severity":"High|Medium|Low","owner":"string","mitigation":"string","status":"Open|In Progress|Closed"}
+  ],
+  "nextWeekPriorities": ["string x4"],
+  "milestonesAhead": ["DD/MM/YYYY — milestone description x2-3"],
+  "decisionsNeeded": ["string x2-3"],
+  "dependencies": ["string x2-3"],
+  "actions": [
+    {"id":"A1","action":"string","owner":"string","dueDate":"DD/MM/YYYY","priority":"High|Medium|Low","status":"Open|In Progress|Complete|Overdue"}
+  ]
+}`,
+  })
+  const slides = [
+    execSummarySlide('Executive Summary', d.ragBoxes || [], d.highlights || [], d.blockers || [], d.weekStats || null, color),
+    sprintProgressSlide('Sprint / Milestone Progress', d.sprintProgress || [], color),
+    risksIssuesSlide('Risks & Issues', d.risks || [], color),
+    upcomingWeekSlide('Upcoming Week & Decisions', d.nextWeekPriorities || [], d.milestonesAhead || [], d.decisionsNeeded || [], d.dependencies || [], color),
+    actionLogSlide('Action Log', d.actions || [], color),
+  ]
+  return buildPptxFromSlides(slides, ctx.theme, `Weekly Delivery Status Report`, `${ctx.pname}  ·  Week Ending: ${date}`)
+}
+
 export async function genKickoffDeck(ctx, opts) {
   const color = ctx.theme?.primary || '#4F46E5'
   const d = await callClaudeJSON({
     ...opts,
-    user: `Generate a project kick-off presentation. Use specific, professional language a consultant would write.
+    user: `Generate a project kick-off presentation. Write as a senior consultant — specific, professional, no generic filler.
 Project: ${ctx.pname} | Client: ${ctx.cname} | Start: ${ctx.start || 'TBC'} | Method: ${ctx.method} | Sprint: ${ctx.sprint}
 Team: ${ctx.team} | Tech: ${ctx.tech || 'TBC'} | Industry: ${ctx.industry || 'TBC'}
 Scope: ${ctx.scope}${ctx.sow ? `\n\nStatement of Work:\n${ctx.sow.slice(0,2500)}` : ''}
@@ -400,7 +572,7 @@ Return ONLY this JSON (no markdown, no extra fields):
   "clientTeam": [{"name":"string","role":"string"} x3-4],
   "deliveryTeam": [{"name":"string","role":"string"} x3-4],
   "approach": ["string x5-6"],
-  "milestones": [{"name":"string","date":"DD/MM/YYYY","status":"On Track"} x5-6],
+  "milestones": [{"name":"string","date":"DD/MM/YYYY","status":"On Track"} x5-7],
   "waysOfWorking": ["string x5-6"],
   "nextSteps": ["string x4-5"]
 }`,
@@ -426,7 +598,7 @@ Return ONLY this JSON (no markdown, no extra fields):
     contentSlide('Ways of Working', d.waysOfWorking || [], color),
     contentSlide('Next Steps', d.nextSteps || [], color),
   ]
-  return buildPptxFromSlides(slides, ctx.theme, `Kick-off — ${ctx.pname}`)
+  return buildPptxFromSlides(slides, ctx.theme, `Kick-off Presentation`, ctx.pname || '')
 }
 
 export async function genDeliveryReport(ctx, opts) {
@@ -434,7 +606,7 @@ export async function genDeliveryReport(ctx, opts) {
   const date = new Date().toLocaleDateString('en-GB')
   const d = await callClaudeJSON({
     ...opts,
-    user: `Generate a delivery status report presentation. Use specific, professional language.
+    user: `Generate a delivery status report presentation. Write as a senior project manager — specific, professional.
 Project: ${ctx.pname} | Client: ${ctx.cname} | DM: ${ctx.dm || 'TBC'} | Method: ${ctx.method}
 Scope: ${ctx.scope}${ctx.sow ? `\n\nStatement of Work:\n${ctx.sow.slice(0,2500)}` : ''}
 ${ctx.instructions?.['delivery-report'] ? `\nCUSTOM INSTRUCTIONS: ${ctx.instructions['delivery-report']}` : ''}
@@ -442,8 +614,8 @@ ${ctx.instructions?.['delivery-report'] ? `\nCUSTOM INSTRUCTIONS: ${ctx.instruct
 Return ONLY this JSON (no markdown, no extra fields):
 {
   "rag": "Green|Amber|Red",
-  "summary": "2-3 sentence paragraph summarising delivery health",
-  "statusRows": [["Budget","On Track"],["Timeline","On Track"],["Scope","Stable"],["Team","Fully resourced"],["Client satisfaction","High"]],
+  "summary": "2-3 sentence executive summary paragraph",
+  "statusRows": [["Budget","On Track"],["Timeline","On Track"],["Scope","Stable"],["Team","Fully resourced"],["Client Satisfaction","High"]],
   "completed": ["string x5-6"],
   "upcoming": ["string x5-6"],
   "risks": [{"text":"string","rag":"Green|Amber|Red","mitigation":"string","owner":"string"} x4-5],
@@ -451,6 +623,7 @@ Return ONLY this JSON (no markdown, no extra fields):
   "nextSteps": ["string x4-5"]
 }`,
   })
+  const summaryText = d.summary || ''
   const statusRows = [
     ['Project', ctx.pname || ''],
     ['Client', ctx.cname || ''],
@@ -459,54 +632,12 @@ Return ONLY this JSON (no markdown, no extra fields):
     ...(d.statusRows || []).map(([k, v]) => [k, v]),
   ]
   const slides = [
-    highlightSlide('Executive Summary', d.summary || '', color),
     overviewTableSlide('Project Status', statusRows, color),
+    contentSlide('Executive Summary', summaryText ? [summaryText] : [], color),
     twoColSlide('Delivery Progress', 'Completed', d.completed || [], 'Upcoming', d.upcoming || [], color),
     ragTableSlide('Risks & Issues', d.risks || [], color),
     milestoneTableSlide('Milestones', d.milestones || [], color),
     contentSlide('Next Steps', d.nextSteps || [], color),
   ]
-  return buildPptxFromSlides(slides, ctx.theme, `Delivery Report — ${ctx.pname}`)
-}
-
-export async function genPptxStatusReport(ctx, opts) {
-  const color = ctx.theme?.primary || '#4F46E5'
-  const date = new Date().toLocaleDateString('en-GB')
-  const d = await callClaudeJSON({
-    ...opts,
-    user: `Generate a weekly project status report presentation. Use specific, professional language.
-Project: ${ctx.pname} | Client: ${ctx.cname} | DM: ${ctx.dm || 'TBC'} | Method: ${ctx.method}
-Scope: ${ctx.scope}${ctx.sow ? `\n\nStatement of Work:\n${ctx.sow.slice(0,2500)}` : ''}
-${ctx.instructions?.['status-report'] ? `\nCUSTOM INSTRUCTIONS: ${ctx.instructions['status-report']}` : ''}
-
-Return ONLY this JSON (no markdown, no extra fields):
-{
-  "rag": "Green|Amber|Red",
-  "summary": "2-3 sentence paragraph on project health this week",
-  "progress": ["string x6-8"],
-  "planned": ["string x5-6"],
-  "risks": [{"text":"string","rag":"Green|Amber|Red","mitigation":"string","owner":"string"} x4-5],
-  "milestones": [{"name":"string","date":"DD/MM/YYYY","status":"Complete|On Track|At Risk|Delayed"} x5-6],
-  "decisions": [{"text":"string","owner":"string","due":"DD/MM/YYYY"} x3]
-}`,
-  })
-  const slides = [
-    overviewTableSlide('Project Overview', [
-      ['Project', ctx.pname || ''],
-      ['Client', ctx.cname || ''],
-      ['Report Date', date],
-      ['Delivery Manager', ctx.dm || ''],
-      ['Overall Status', d.rag || 'Green', d.rag],
-      ['Reporting Period', `Week ending ${date}`],
-    ], color),
-    highlightSlide('Executive Summary', d.summary || '', color),
-    twoColSlide('Progress & Planned Work',
-      'Progress This Period', d.progress || [],
-      'Planned Next Period', d.planned || [],
-      color),
-    ragTableSlide('Risks & Issues', d.risks || [], color),
-    milestoneTableSlide('Milestone Tracker', d.milestones || [], color),
-    decisionsTableSlide('Decisions Required', d.decisions || [], color),
-  ]
-  return buildPptxFromSlides(slides, ctx.theme, `Weekly Status Report — ${ctx.pname}`)
+  return buildPptxFromSlides(slides, ctx.theme, `Delivery Report`, ctx.pname || '')
 }
