@@ -59,17 +59,22 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
         overflow: 'hidden',
       }}>
         {/* Logo */}
-        <div style={{
-          padding: '16px 16px 18px', flexShrink: 0,
-          display: 'flex', alignItems: 'center', gap: 10,
-          borderBottom: '1px solid var(--border)',
-        }}>
+        <button
+          onClick={() => setPage('welcome')}
+          style={{
+            padding: '16px 16px 18px', flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: 10,
+            borderBottom: '1px solid var(--border)',
+            background: 'none', border: 'none', cursor: 'pointer',
+            width: '100%', textAlign: 'left',
+          }}
+        >
           <KickstartLogo size={30} />
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2 }}>Kickstart</div>
+            <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--text)' }}>Kickstart</div>
             <div style={{ fontSize: 10, color: 'var(--t3)', letterSpacing: '0.02em', marginTop: 1 }}>Project artefact generator</div>
           </div>
-        </div>
+        </button>
 
         {/* Nav */}
         <div style={{ padding: '10px 8px 0', flexShrink: 0 }}>
