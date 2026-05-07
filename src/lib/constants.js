@@ -9,7 +9,7 @@ export const DOCX_ARTS = [
   { id: 'uat-guide',        name: 'UAT guide',                  desc: 'Test plan, scripts & defect log',           type: 'docx' },
   { id: 'client-request',   name: 'Client request template',    desc: 'Structured intake form for new requests',   type: 'docx' },
   // Delivery
-  { id: 'status-report',    name: 'Weekly status report',       desc: 'RAG status, progress & next steps',         type: 'docx' },
+  { id: 'status-report',    name: 'Weekly status report',       desc: 'RAG status, progress & next steps',         type: 'pptx' },
   { id: 'change-request',   name: 'Change request',             desc: 'Change control form & impact assessment',   type: 'docx' },
   { id: 'sprint-review',    name: 'Sprint review',              desc: 'Demo outcomes, velocity & feedback',        type: 'docx' },
   // Closure

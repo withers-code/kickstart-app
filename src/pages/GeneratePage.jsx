@@ -6,9 +6,9 @@ import SowUploader from '../components/SowUploader.jsx'
 import ThemePicker from '../components/ThemePicker.jsx'
 import ArtefactGrid from '../components/ArtefactGrid.jsx'
 import { ALL_ARTS, THEME_PRESETS } from '../lib/constants.js'
-import { genDocxDoD, genDocxRequirements, genDocxMeetingNotes, genDocxHandover, genDocxRetrospective, genDocxChecklist, genDocxTechSpec, genDocxUAT, genDocxClientRequest, genDocxStatusReport, genDocxChangeRequest, genDocxSprintReview, genDocxLessonsLearned, genDocxProjectClosure } from '../lib/docxGenerators.js'
+import { genDocxDoD, genDocxRequirements, genDocxMeetingNotes, genDocxHandover, genDocxRetrospective, genDocxChecklist, genDocxTechSpec, genDocxUAT, genDocxClientRequest, genDocxChangeRequest, genDocxSprintReview, genDocxLessonsLearned, genDocxProjectClosure } from '../lib/docxGenerators.js'
 import { genRAID, genStakeholder, genRACI, genProjectPlan, genDecisionLog, genCommsPlan } from '../lib/xlsxGenerators.js'
-import { genKickoffDeck, genDeliveryReport } from '../lib/pptxGenerators.js'
+import { genKickoffDeck, genDeliveryReport, genPptxStatusReport } from '../lib/pptxGenerators.js'
 import { genConfluencePrompt, genJiraPrompt } from '../lib/atlassianGenerators.js'
 
 const PRESET_SR = THEME_PRESETS['sprint-reply']
@@ -104,7 +104,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
     'retrospective': genDocxRetrospective, 'project-checklist': genDocxChecklist,
     'tech-spec': genDocxTechSpec, 'uat-guide': genDocxUAT,
     'client-request': genDocxClientRequest,
-    'status-report': genDocxStatusReport, 'change-request': genDocxChangeRequest,
+    'change-request': genDocxChangeRequest,
     'sprint-review': genDocxSprintReview, 'lessons-learned': genDocxLessonsLearned,
     'project-closure': genDocxProjectClosure,
   }
@@ -113,7 +113,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
     'raid': genRAID, 'stakeholder': genStakeholder, 'raci': genRACI,
     'project-plan': genProjectPlan, 'decision-log': genDecisionLog, 'comms-plan': genCommsPlan,
   }
-  const pptxFns = { 'kick-off-deck': genKickoffDeck, 'delivery-report': genDeliveryReport }
+  const pptxFns = { 'kick-off-deck': genKickoffDeck, 'delivery-report': genDeliveryReport, 'status-report': genPptxStatusReport }
 
   async function runArt(art, updateFn) {
     try {

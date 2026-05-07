@@ -234,3 +234,21 @@ Return JSON: {slides:[{title:string,bulletPoints:[string]} x 8-12 slides]}`,
   })
   return buildPptx(data.slides || [], ctx.theme, `Delivery Report — ${ctx.pname}`)
 }
+
+export async function genPptxStatusReport(ctx, opts) {
+  const date = new Date().toLocaleDateString('en-GB')
+  const data = await callClaudeJSON({
+    ...opts,
+    user: `Generate a weekly status report presentation. Project: ${ctx.pname} | Client: ${ctx.cname} | DM: ${ctx.dm} | Scope: ${ctx.scope} | Team: ${ctx.team} | Method: ${ctx.method}${ctx.instructions?.['status-report'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['status-report']}` : ''}${ctx.examples?.['status-report']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['status-report'].text.slice(0, 4000)}` : ''}
+Return JSON: {slides:[
+  {title:"Project Overview", bulletPoints:["Project: <name>","Client: <client>","Date: ${date}","Delivery Manager: <dm>","Overall Status: Green / Amber / Red","Reporting Period: Week ending ${date}"]},
+  {title:"Executive Summary", bulletPoints:[3-4 concise bullet points summarising overall health and key message]},
+  {title:"Progress This Period", bulletPoints:[6-8 specific completed items with owner or workstream prefix where relevant]},
+  {title:"Planned Next Period", bulletPoints:[5-6 planned items for the coming week]},
+  {title:"Risks & Issues", bulletPoints:["[Amber] <risk> — <mitigation> (Owner: <name>)", "[Red] ...", "[Green] ..." — 4-5 items using RAG prefix]},
+  {title:"Milestones", bulletPoints:["✓ <milestone> — <date> — Complete", "→ <milestone> — <date> — On Track", "⚠ <milestone> — <date> — At Risk" — 5-6 items]},
+  {title:"Decisions Required", bulletPoints:["<decision> | Owner: <name> | Due: <date>" — 3 items]}
+]}`,
+  })
+  return buildPptx(data.slides || [], ctx.theme, `Weekly Status Report — ${ctx.pname}`)
+}
