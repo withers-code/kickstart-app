@@ -15,6 +15,7 @@ const msalConfig = {
     clientId: import.meta.env.VITE_AZURE_CLIENT_ID || 'placeholder',
     authority: `https://login.microsoftonline.com/${import.meta.env.VITE_AZURE_TENANT_ID || 'common'}`,
     redirectUri: typeof window !== 'undefined' ? window.location.origin : '/',
+    postLogoutRedirectUri: typeof window !== 'undefined' ? window.location.origin : '/',
   },
   cache: {
     cacheLocation: 'localStorage',
