@@ -103,7 +103,7 @@ export default function GenerationBanner({ results, generating, projectSlug, onR
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', borderBottom: collapsed ? 'none' : '1px solid var(--border)' }}>
           {workingCount > 0 ? <Spinner size={13} /> : <Check size={13} color="var(--green)" strokeWidth={2.5} />}
-          <span style={{ fontSize: 13, fontWeight: 500, flex: 1, color: 'var(--text)' }}>{statusLine}</span>
+          <span role="status" aria-live="polite" style={{ fontSize: 13, fontWeight: 500, flex: 1, color: 'var(--text)' }}>{statusLine}</span>
 
           {errorCount > 0 && !generating && (
             <button onClick={retryFailed} style={{
@@ -138,35 +138,43 @@ export default function GenerationBanner({ results, generating, projectSlug, onR
           <div style={{ padding: '10px 20px 0', display: 'flex', flexWrap: 'wrap', gap: 7, maxHeight: 112, overflowY: 'auto' }}>
             {results.map(r => (
               <div key={r.id} title={r.status === 'error' ? r.error : undefined}
+                className="artefact-chip"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 9px', borderRadius: 8, fontSize: 12, ...chipStyle(r.status) }}>
                 <StatusIcon status={r.status} />
                 <span style={{ color: chipTextColor(r.status), fontWeight: 500 }}>{r.name}</span>
-                {(r.status === 'done' || r.status === 'prompt') && (
-                  <button title={`Download ${r.name}`} onClick={() => downloadResult(r, projectSlug)}
-                    className="chip-action" style={{ background: 'none', border: 'none', cursor: 'pointer', color: chipTextColor(r.status), display: 'flex', padding: 0, marginLeft: 2 }}>
-                    <Download size={11} />
-                  </button>
-                )}
-                {r.status === 'prompt' && (
-                  <button title="Copy Rovo prompt" onClick={() => typeof r.data === 'string' && navigator.clipboard.writeText(r.data)}
-                    className="chip-action" style={{ background: 'none', border: 'none', cursor: 'pointer', color: chipTextColor(r.status), display: 'flex', padding: 0 }}>
-                    <Copy size={11} />
-                  </button>
-                )}
-                {(r.status === 'done' || r.status === 'prompt' || r.status === 'error') && (
-                  <button title="Regenerate" onClick={() => onRegenerateOne?.(r.id)}
-                    className="chip-action" style={{ background: 'none', border: 'none', cursor: 'pointer', color: chipTextColor(r.status), display: 'flex', padding: 0, opacity: r.status === 'error' ? 1 : 0.5 }}>
-                    <RotateCcw size={10} />
-                  </button>
-                )}
-                {(r.status === 'done' || r.status === 'prompt') && (
-                  <button title="Refine with instructions" onClick={() => setRefineTarget(rt => rt === r.id ? null : r.id)}
-                    className="chip-action" style={{ background: 'none', border: 'none', cursor: 'pointer', color: refineTarget === r.id ? 'var(--purple)' : chipTextColor(r.status), display: 'flex', padding: 0, opacity: refineTarget === r.id ? 1 : 0.5 }}>
-                    <Pencil size={10} />
-                  </button>
-                )}
+                <span className="chip-actions" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  {(r.status === 'done' || r.status === 'prompt') && (
+                    <button title={`Download ${r.name}`} aria-label={`Download ${r.name}`} onClick={() => downloadResult(r, projectSlug)}
+                      className="chip-action" style={{ background: 'none', border: 'none', cursor: 'pointer', color: chipTextColor(r.status), display: 'flex', padding: 2 }}>
+                      <Download size={11} />
+                    </button>
+                  )}
+                  {r.status === 'prompt' && (
+                    <button title="Copy prompt" aria-label="Copy prompt" onClick={() => typeof r.data === 'string' && navigator.clipboard.writeText(r.data)}
+                      className="chip-action" style={{ background: 'none', border: 'none', cursor: 'pointer', color: chipTextColor(r.status), display: 'flex', padding: 2 }}>
+                      <Copy size={11} />
+                    </button>
+                  )}
+                  {(r.status === 'done' || r.status === 'prompt' || r.status === 'error') && (
+                    <button title="Regenerate" aria-label={`Regenerate ${r.name}`} onClick={() => onRegenerateOne?.(r.id)}
+                      className="chip-action" style={{ background: 'none', border: 'none', cursor: 'pointer', color: chipTextColor(r.status), display: 'flex', padding: 2 }}>
+                      <RotateCcw size={10} />
+                    </button>
+                  )}
+                  {(r.status === 'done' || r.status === 'prompt') && (
+                    <button title="Refine" aria-label={`Refine ${r.name}`} onClick={() => setRefineTarget(rt => rt === r.id ? null : r.id)}
+                      className="chip-action" style={{ background: 'none', border: 'none', cursor: 'pointer', color: refineTarget === r.id ? 'var(--purple)' : chipTextColor(r.status), display: 'flex', padding: 2 }}>
+                      <Pencil size={10} />
+                    </button>
+                  )}
+                </span>
               </div>
             ))}
+            <style>{`
+              .artefact-chip .chip-actions { opacity: 0; transition: opacity 0.15s; }
+              .artefact-chip:hover .chip-actions,
+              .artefact-chip:focus-within .chip-actions { opacity: 1; }
+            `}</style>
           </div>
         )}
 

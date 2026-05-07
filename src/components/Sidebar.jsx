@@ -50,7 +50,7 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
 
   return (
     <>
-      <nav data-open={sidebarOpen} style={{
+      <nav aria-label="Main navigation" data-open={sidebarOpen} style={{
         width: 232, minWidth: 232,
         background: 'var(--surface)',
         borderRight: '1px solid var(--border)',
@@ -86,16 +86,18 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
           <button
             onClick={onNewSession}
             style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-              padding: '9px 12px', borderRadius: 9,
-              cursor: 'pointer', fontSize: 13, fontWeight: 600,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              padding: '7px 12px', borderRadius: 8,
+              cursor: 'pointer', fontSize: 12, fontWeight: 600,
               color: '#fff', background: 'var(--purple)',
-              transition: 'all 0.12s', border: 'none', width: '100%',
-              fontFamily: "'DM Sans', sans-serif",
+              transition: 'background 0.12s', border: 'none', width: '100%',
+              fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.01em',
             }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--pd)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--purple)'}
           >
-            <Plus size={15} strokeWidth={2.5} />
-            New document generation
+            <Plus size={13} strokeWidth={2.5} />
+            New generation
           </button>
 
           {NAV.map(({ id, label, Icon }) => (
@@ -174,6 +176,7 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
                     <button
                       onClick={e => { e.stopPropagation(); setDeleteTarget(entry) }}
                       title="Delete"
+                      aria-label={`Delete ${entry.pname || 'Untitled'}`}
                       style={{
                         position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
                         background: 'none', border: 'none', cursor: 'pointer',
@@ -202,7 +205,7 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
                 <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
                 <div style={{ fontSize: 10, color: 'var(--t3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{account.username}</div>
               </div>
-              <button onClick={handleSignOut} title="Sign out" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', padding: 4, display: 'flex', alignItems: 'center', borderRadius: 6, flexShrink: 0 }}>
+              <button onClick={handleSignOut} title="Sign out" aria-label="Sign out" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', padding: 4, display: 'flex', alignItems: 'center', borderRadius: 6, flexShrink: 0 }}>
                 <LogOut size={14} />
               </button>
             </div>

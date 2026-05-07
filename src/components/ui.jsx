@@ -79,22 +79,34 @@ export function Textarea({ style, ...props }) {
 }
 
 export function Btn({ variant = 'primary', full, children, style, disabled, ...props }) {
+  const [hovered, setHovered] = React.useState(false)
   const base = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
     padding: '8px 15px', borderRadius: 8,
     fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 500,
     cursor: disabled ? 'not-allowed' : 'pointer',
-    transition: 'all 0.12s', border: '1px solid transparent',
+    transition: 'background 0.12s, border-color 0.12s, box-shadow 0.12s', border: '1px solid transparent',
     whiteSpace: 'nowrap', width: full ? '100%' : undefined,
     opacity: disabled ? 0.4 : 1,
   }
   const variants = {
-    primary: { background: 'var(--text)', color: 'var(--surface)', boxShadow: 'var(--sh)' },
+    primary:   { background: 'var(--text)', color: 'var(--surface)', boxShadow: 'var(--sh)' },
     secondary: { background: 'var(--surface)', color: 'var(--t2)', borderColor: 'var(--border-mid)', boxShadow: 'var(--sh)' },
-    ghost: { background: 'transparent', color: 'var(--t2)', borderColor: 'transparent' },
+    ghost:     { background: 'transparent', color: 'var(--t2)', borderColor: 'transparent' },
+  }
+  const hoverVariants = {
+    primary:   { background: '#2D2B28' },
+    secondary: { background: 'var(--surface2)', borderColor: 'var(--border-mid)' },
+    ghost:     { background: 'var(--surface2)' },
   }
   return (
-    <button style={{ ...base, ...variants[variant], ...style }} disabled={disabled} {...props}>
+    <button
+      style={{ ...base, ...variants[variant], ...(hovered && !disabled ? hoverVariants[variant] : {}), ...style }}
+      disabled={disabled}
+      onMouseEnter={() => !disabled && setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      {...props}
+    >
       {children}
     </button>
   )

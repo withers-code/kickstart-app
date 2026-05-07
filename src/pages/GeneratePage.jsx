@@ -175,7 +175,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
 
       <Card>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <CardTitle icon={Briefcase}>1 · Project context</CardTitle>
+          <CardTitle icon={Briefcase}>Project context</CardTitle>
           <button onClick={handleSowClear} style={{ fontSize: 12, color: 'var(--t3)', background: 'none', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer', padding: '4px 10px', lineHeight: 1.4 }}>Clear form</button>
         </div>
         <SowUploader opts={opts} populated={!!sowFileName} fileName={sowFileName} onPopulate={handleSowPopulate} onClear={handleSowClear} />
@@ -216,12 +216,12 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
       </Card>
 
       <Card>
-        <CardTitle icon={Palette}>2 · Brand theme &amp; colours</CardTitle>
+        <CardTitle icon={Palette}>Brand theme &amp; colours</CardTitle>
         <ThemePicker theme={theme} setTheme={setTheme} uploadedFile={uploadedFile} setUploadedFile={setUploadedFile} />
       </Card>
 
       <Card>
-        <CardTitle icon={CheckSquare}>3 · Select artefacts</CardTitle>
+        <CardTitle icon={CheckSquare}>Select artefacts</CardTitle>
         <ArtefactGrid selected={selected} onToggle={toggleArt} onToggleAll={toggleAll} onBulkToggle={bulkToggle} />
       </Card>
 

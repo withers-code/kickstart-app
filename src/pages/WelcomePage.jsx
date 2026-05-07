@@ -1,5 +1,11 @@
 import React from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, FileText, LayoutGrid, Presentation } from 'lucide-react'
+
+const VALUE_PROPS = [
+  { Icon: FileText,     label: 'Word documents',  desc: 'PID, RAID log, requirements, UAT guide, handover packs and more' },
+  { Icon: LayoutGrid,   label: 'Spreadsheets',    desc: 'Budget tracker, project plan, RACI, stakeholder map and decision log' },
+  { Icon: Presentation, label: 'Presentations',   desc: 'Kick-off deck, status report and steering committee pack' },
+]
 
 export default function WelcomePage({ onNewSession }) {
   return (
@@ -32,16 +38,42 @@ export default function WelcomePage({ onNewSession }) {
           border: 'none', cursor: 'pointer',
           fontSize: 14, fontWeight: 600,
           fontFamily: "'DM Sans', sans-serif",
-          marginTop: 4,
+          marginTop: 4, transition: 'background 0.12s',
         }}
+        onMouseEnter={e => e.currentTarget.style.background = 'var(--pd)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'var(--purple)'}
       >
         <Plus size={16} strokeWidth={2.5} />
-        New document generation
+        New generation
       </button>
+
+      {/* Value prop row */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 12, maxWidth: 560, width: '100%', marginTop: 8,
+      }}
+        className="welcome-props"
+      >
+        {VALUE_PROPS.map(({ Icon, label, desc }) => (
+          <div key={label} style={{
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 12, padding: '14px 14px 12px', textAlign: 'left',
+            boxShadow: 'var(--sh)',
+          }}>
+            <div style={{ width: 28, height: 28, borderRadius: 7, background: 'var(--pl)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <Icon size={14} color="var(--purple)" />
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>{desc}</div>
+          </div>
+        ))}
+      </div>
 
       <div style={{ fontSize: 12, color: 'var(--t3)' }}>
         Or select a previous project from the sidebar
       </div>
+
+      <style>{`@media (max-width: 520px) { .welcome-props { grid-template-columns: 1fr !important; } }`}</style>
     </div>
   )
 }

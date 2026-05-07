@@ -197,12 +197,26 @@ export default function App() {
         {/* Header */}
         <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '13px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10, gap: 12 }}>
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="mobile-menu-btn"
+            aria-label="Toggle navigation"
             style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 8, color: 'var(--text)', alignItems: 'center', justifyContent: 'center' }}>
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{meta.title}</div>
-            <div className="description-text" style={{ fontSize: 12, color: 'var(--t3)', marginTop: 1 }}>{meta.desc}</div>
+            {page === 'generate' && activeHistoryEntry ? (
+              <>
+                <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {activeHistoryEntry.ctx?.pname || 'Untitled project'}
+                </div>
+                <div className="description-text" style={{ fontSize: 12, color: 'var(--t3)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {[activeHistoryEntry.ctx?.cname, activeHistoryEntry.ctx?.method].filter(Boolean).join(' · ')}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{meta.title}</div>
+                <div className="description-text" style={{ fontSize: 12, color: 'var(--t3)', marginTop: 1 }}>{meta.desc}</div>
+              </>
+            )}
           </div>
         </div>
 
