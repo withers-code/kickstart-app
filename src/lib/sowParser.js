@@ -134,6 +134,21 @@ async function extractFieldsFromPdf(base64, opts) {
   return JSON.parse(text.replace(/```json\n?|```\n?/g, '').trim())
 }
 
+const METHOD_MAP = {
+  scrum: 'Agile Scrum', kanban: 'Agile Kanban',
+  hybrid: 'Hybrid (Agile + Waterfall)', waterfall: 'Waterfall / Phased', phased: 'Waterfall / Phased',
+}
+const SPRINT_MAP = { '1': '1 week', '2': '2 weeks', '3': '3 weeks', '4': '4 weeks' }
+
+// Pure normalisation — exported for testing
+export function normaliseFields(fields) {
+  const rawMethod = (fields.method || '').toLowerCase()
+  const method = Object.entries(METHOD_MAP).find(([k]) => rawMethod.includes(k))?.[1] || 'Agile Scrum'
+  const rawSprint = (fields.sprint || '').match(/\d/)?.[0] || '2'
+  const sprint = SPRINT_MAP[rawSprint] || '2 weeks'
+  return { ...fields, method, sprint }
+}
+
 // Main entry — extract + parse
 export async function parseSoW(file, opts) {
   const extracted = await extractText(file)
@@ -141,21 +156,6 @@ export async function parseSoW(file, opts) {
     ? await extractFieldsFromPdf(extracted.content, opts)
     : await extractFieldsFromText(extracted.content, opts)
 
-  // Normalise method/sprint to valid option values
-  const methodMap = {
-    scrum: 'Agile Scrum', kanban: 'Agile Kanban',
-    hybrid: 'Hybrid (Agile + Waterfall)', waterfall: 'Waterfall / Phased', phased: 'Waterfall / Phased',
-  }
-  const sprintMap = { '1': '1 week', '2': '2 weeks', '3': '3 weeks', '4': '4 weeks' }
-
-  const rawMethod = (fields.method || '').toLowerCase()
-  const method = Object.entries(methodMap).find(([k]) => rawMethod.includes(k))?.[1] || 'Agile Scrum'
-
-  const rawSprint = (fields.sprint || '').match(/\d/)?.[0] || '2'
-  const sprint = sprintMap[rawSprint] || '2 weeks'
-
-  // Return raw text for SoW field (used by Jira generator)
   const sowText = extracted.type === 'text' ? extracted.content : '[PDF — see uploaded document]'
-
-  return { ...fields, method, sprint, sowText }
+  return { ...normaliseFields(fields), sowText }
 }
