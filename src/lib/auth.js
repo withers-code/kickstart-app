@@ -52,8 +52,12 @@ export async function signIn() {
   // Page will redirect — execution stops here
 }
 
-// Trigger Microsoft logout via redirect
-export async function signOut(account) {
+// Clear MSAL's local token cache without triggering a server-side redirect.
+// logoutRedirect sends the user through Microsoft's logout endpoint, which
+// then follows the "Front-channel logout URL" set in the Azure App Registration
+// (often a ServiceNow or other enterprise URL we don't control).
+// Clearing the cache locally is enough to destroy the session in this app.
+export async function signOut() {
   const msal = await getMsal()
-  await msal.logoutRedirect({ account })
+  await msal.clearCache()
 }
