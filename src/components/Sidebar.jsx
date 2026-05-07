@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { Plus, Info, Settings, SlidersHorizontal, LogOut, X, Clock } from 'lucide-react'
 import { AUTH_ENABLED, signOut } from '../lib/auth.js'
+import pkg from '../../package.json'
 
 const NAV = [
   { id: 'instructions', label: 'Custom instructions', Icon: SlidersHorizontal },
@@ -197,7 +198,7 @@ export default function Sidebar({ page, setPage, sidebarOpen, account, onSignOut
             </div>
           )}
           <div style={{ padding: '8px 16px 14px', fontSize: 11, color: 'var(--t3)' }}>
-            v2.0 · May 2026
+            v{pkg.version} · {new Date().toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
           </div>
         </div>
       </nav>
