@@ -82,7 +82,7 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
   }
 
   const opts = { apiKey, model: model || 'claude-sonnet-4-20250514', maxTokens: maxTokens || 4000 }
-  const optsOpus = { apiKey, model: 'claude-opus-4-7', maxTokens: maxTokens || 4000 }
+  const optsOpus = { apiKey, model: 'claude-opus-4-20250514', maxTokens: maxTokens || 4000 }
   const fullCtx = { ...ctx, sow: sowText, theme, instructions: customInstructions, examples: artefactExamples }
 
   const docxFns = {
@@ -108,7 +108,9 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
 
   async function runArt(art, updateFn, amendment = '') {
     const artCtx = amendment
-      ? { ...fullCtx, instructions: { ...fullCtx.instructions, [art.id]: [fullCtx.instructions?.[art.id], `REFINEMENT REQUEST: ${amendment}`].filter(Boolean).join('\n\n') } }
+      ? { ...fullCtx, instructions: { ...fullCtx.instructions, [art.id]: [fullCtx.instructions?.[art.id], `REFINEMENT REQUEST: ${amendment}`].filter(Boolean).join('
+
+') } }
       : fullCtx
     try {
       if (art.type === 'docx') {
@@ -125,7 +127,9 @@ export default function GeneratePage({ apiKey, model, maxTokens, sowText, setSow
         updateFn(art.id, { status: 'done', data: await fn(artCtx, optsOpus) })
       } else if (art.type === 'prompt') {
         const text = art.id === 'confluence' ? await genConfluencePrompt(artCtx, opts) : await genJiraPrompt(artCtx, opts)
-        updateFn(art.id, { status: 'prompt', data: text, previewText: text.slice(0, 600) + (text.length > 600 ? '\n\n… (full content available via Download / Copy)' : '') })
+        updateFn(art.id, { status: 'prompt', data: text, previewText: text.slice(0, 600) + (text.length > 600 ? '
+
+… (full content available via Download / Copy)' : '') })
       }
     } catch (err) {
       updateFn(art.id, { status: 'error', error: err.message })
