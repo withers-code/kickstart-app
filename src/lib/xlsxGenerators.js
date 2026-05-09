@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx'
 import { callClaudeJSON } from './api.js'
+import { getDeliveryManagerPrompt, getFinancePrompt } from './agilePrompts.js'
 
 function hexToARGB(hex) {
   return 'FF' + (hex || '#4F46E5').replace('#', '').toUpperCase().padEnd(6, '0')
@@ -32,7 +33,7 @@ function makeWb(sheets) {
 export async function genRAID(ctx, opts) {
   const arr = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
-    system: 'You are a senior delivery manager at Kickstart.',
+    system: getDeliveryManagerPrompt(),
     user: `Generate 20 RAID log entries for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}${ctx.instructions?.['raid'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['raid']}` : ''}${ctx.examples?.['raid']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['raid'].text.slice(0, 4000)}` : ''}
 Return JSON array, each: {id,category(Risk|Assumption|Issue|Dependency),description,impact(High|Medium|Low),probability(High|Medium|Low|N/A),riskScore(High|Medium|Low|N/A),owner,mitigation,status(Open|In Progress|Closed|Accepted),dateRaised,targetClose}`,
   })
@@ -62,7 +63,7 @@ Return JSON array, each: {id,category(Risk|Assumption|Issue|Dependency),descript
 export async function genStakeholder(ctx, opts) {
   const arr = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
-    system: 'You are a senior delivery manager at Kickstart.',
+    system: getDeliveryManagerPrompt(),
     user: `Generate 14 stakeholders for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}${ctx.instructions?.['stakeholder'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['stakeholder']}` : ''}${ctx.examples?.['stakeholder']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['stakeholder'].text.slice(0, 4000)}` : ''}
 JSON array each: {name,role,organisation,influence(High|Medium|Low),interest(High|Medium|Low),attitude(Champion|Supporter|Neutral|Sceptic|Blocker),concerns,engagementApproach,owner,quadrant(Manage Closely|Keep Satisfied|Keep Informed|Monitor)}`,
   })
@@ -89,7 +90,7 @@ JSON array each: {name,role,organisation,influence(High|Medium|Low),interest(Hig
 export async function genRACI(ctx, opts) {
   const data = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
-    system: 'You are a senior delivery manager at Kickstart.',
+    system: getDeliveryManagerPrompt(),
     user: `Generate RACI matrix for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}${ctx.instructions?.['raci'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['raci']}` : ''}${ctx.examples?.['raci']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['raci'].text.slice(0, 4000)}` : ''}
 Return JSON: {roles:[10 role names mix of client and Kickstart], activities:[{activity,category,raci:{roleName:"R|A|C|I|""}} x22 activities across Planning,Requirements,Design,Development,Testing,Deployment,Governance]}`,
   })
@@ -116,7 +117,7 @@ Return JSON: {roles:[10 role names mix of client and Kickstart], activities:[{ac
 export async function genProjectPlan(ctx, opts) {
   const data = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
-    system: 'You are a senior delivery manager at Kickstart.',
+    system: getDeliveryManagerPrompt(),
     user: `Generate project plan for: Project: ${ctx.pname} | Methodology: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}${ctx.instructions?.['project-plan'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['project-plan']}` : ''}${ctx.examples?.['project-plan']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['project-plan'].text.slice(0, 4000)}` : ''}
 Return JSON: {phases:[{phase,startWeek,durationWeeks,milestones:[],owner,status(Not Started|In Progress|At Risk|Complete)} x6], assumptions:[string x7]}`,
   })
@@ -143,7 +144,7 @@ Return JSON: {phases:[{phase,startWeek,durationWeeks,milestones:[],owner,status(
 export async function genDecisionLog(ctx, opts) {
   const arr = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
-    system: 'You are a senior delivery manager at Kickstart.',
+    system: getDeliveryManagerPrompt(),
     user: `Generate 8 seeded decision log entries for: Project: ${ctx.pname} | Scope: ${ctx.scope}${ctx.instructions?.['decision-log'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['decision-log']}` : ''}${ctx.examples?.['decision-log']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['decision-log'].text.slice(0, 4000)}` : ''}
 JSON array each: {id,date,decision,rationale,optionsConsidered,madeBy,impact(High|Medium|Low),status(Open|Agreed|Superseded),reviewDate}`,
   })
@@ -160,7 +161,7 @@ JSON array each: {id,date,decision,rationale,optionsConsidered,madeBy,impact(Hig
 export async function genCommsPlan(ctx, opts) {
   const arr = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
-    system: 'You are a senior delivery manager at Kickstart.',
+    system: getDeliveryManagerPrompt(),
     user: `Generate 14 communication activities for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}${ctx.instructions?.['comms-plan'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['comms-plan']}` : ''}${ctx.examples?.['comms-plan']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['comms-plan'].text.slice(0, 4000)}` : ''}
 JSON array each: {audience,communicationType,purpose,frequency,channel,owner,format,notes}`,
   })
@@ -177,7 +178,7 @@ JSON array each: {audience,communicationType,purpose,frequency,channel,owner,for
 export async function genBudgetTracker(ctx, opts) {
   const phases = await callClaudeJSON({
     apiKey: opts.apiKey, model: opts.model, maxTokens: opts.maxTokens,
-    system: 'You are a senior delivery manager and financial controller at Kickstart.',
+    system: getFinancePrompt(),
     user: `Generate a project budget tracker. Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope} | Team: ${ctx.team} | Tech: ${ctx.tech}${ctx.instructions?.['budget-tracker'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['budget-tracker']}` : ''}${ctx.examples?.['budget-tracker']?.text ? `\n\nEXAMPLE:\n${ctx.examples['budget-tracker'].text.slice(0, 3000)}` : ''}
 Return JSON array of 5 phases, each: {
   phase: string,

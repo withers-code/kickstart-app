@@ -3,6 +3,7 @@ import {
   HeadingLevel, AlignmentType, BorderStyle, WidthType, ShadingType, LevelFormat,
 } from 'docx'
 import { callClaudeJSON } from './api.js'
+import { getDeliveryManagerPrompt, getBAPrompt, getAgilePrompt } from './agilePrompts.js'
 
 // ─── Style helpers ────────────────────────────────────────────────────────────
 function hexClean(h) { return (h || '4F46E5').replace('#', '').toUpperCase() }
@@ -116,6 +117,7 @@ async function buildDocx(content, theme) {
 async function fetchDoD(ctx, opts) {
   return callClaudeJSON({
     ...opts,
+    system: getDeliveryManagerPrompt(),
     user: `Generate DoD/DoR content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}${ctx.instructions?.['dod-dor'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['dod-dor']}` : ''}${ctx.examples?.['dod-dor']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['dod-dor'].text.slice(0, 4000)}` : ''}
 Return JSON: {ready:[12 specific testable criteria strings],done:[14 criteria strings],sprintDone:[6 criteria strings],releaseDone:[8 criteria strings]}`,
   })
@@ -124,6 +126,7 @@ Return JSON: {ready:[12 specific testable criteria strings],done:[14 criteria st
 async function fetchRequirements(ctx, opts) {
   return callClaudeJSON({
     ...opts,
+    system: getBAPrompt(),
     user: `Generate requirements doc content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['requirements'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['requirements']}` : ''}${ctx.examples?.['requirements']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['requirements'].text.slice(0, 4000)}` : ''}
 Return JSON: {purpose:string,inScope:[5-7 items],outScope:[4-5 items],assumptions:[6 items],
 stakeholders:[{name,role,requirements} x5],
@@ -136,6 +139,7 @@ openQuestions:[{id,question,owner,date,resolution} x5]}`,
 async function fetchHandover(ctx, opts) {
   return callClaudeJSON({
     ...opts,
+    system: getDeliveryManagerPrompt(),
     user: `Generate handover log content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['handover'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['handover']}` : ''}${ctx.examples?.['handover']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['handover'].text.slice(0, 4000)}` : ''}
 Return JSON: {keyContacts:[{name,role,org,email,notes} x6],workstreams:[{name,status,priority,nextAction,owner} x5],topRisks:[string x3],relationshipContext:string,techNotes:string,outstandingActions:[{action,owner,due,priority} x5]}`,
   })
@@ -144,6 +148,7 @@ Return JSON: {keyContacts:[{name,role,org,email,notes} x6],workstreams:[{name,st
 async function fetchChecklist(ctx, opts) {
   return callClaudeJSON({
     ...opts,
+    system: getDeliveryManagerPrompt(),
     user: `Generate project checklist content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['project-checklist'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['project-checklist']}` : ''}${ctx.examples?.['project-checklist']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['project-checklist'].text.slice(0, 4000)}` : ''}
 Return JSON: {governance:[8 items],teamAccess:[8 items],requirements:[7 items],technical:[8 items],testing:[5 items],changeManagement:[5 items],preGoLive:[10 items]}`,
   })
@@ -152,6 +157,7 @@ Return JSON: {governance:[8 items],teamAccess:[8 items],requirements:[7 items],t
 async function fetchTechSpec(ctx, opts) {
   return callClaudeJSON({
     ...opts,
+    system: getAgilePrompt(),
     user: `Generate tech spec content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['tech-spec'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['tech-spec']}` : ''}${ctx.examples?.['tech-spec']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['tech-spec'].text.slice(0, 4000)}` : ''}
 Return JSON: {purpose:string,architectureDesc:string,components:[{name,technology,purpose,owner} x6],decisions:[{decision,chosen,rationale,alternatives} x5],integrations:[{system,method,auth,format,owner} x4],security:[6 check items],nfrs:[{nfr,requirement,approach} x5],openQuestions:[{question,owner,date,resolution} x5]}`,
   })
@@ -160,6 +166,7 @@ Return JSON: {purpose:string,architectureDesc:string,components:[{name,technolog
 async function fetchUAT(ctx, opts) {
   return callClaudeJSON({
     ...opts,
+    system: getBAPrompt(),
     user: `Generate UAT guide content for: Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope}${ctx.instructions?.['uat-guide'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['uat-guide']}` : ''}${ctx.examples?.['uat-guide']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['uat-guide'].text.slice(0, 4000)}` : ''}
 Return JSON: {entryCriteria:[7 items],exitCriteria:[6 items]}`,
   })
@@ -400,6 +407,7 @@ export async function genDocxClientRequest(ctx) {
 async function fetchStatusReport(ctx, opts) {
   return callClaudeJSON({
     ...opts,
+    system: getDeliveryManagerPrompt(),
     user: `Generate weekly status report content. Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope} | Team: ${ctx.team}${ctx.instructions?.['status-report'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['status-report']}` : ''}
 Return JSON: {
   overallRag:"Green|Amber|Red",
@@ -518,6 +526,7 @@ export async function genDocxSprintReview(ctx) {
 async function fetchLessonsLearned(ctx, opts) {
   return callClaudeJSON({
     ...opts,
+    system: getDeliveryManagerPrompt(),
     user: `Generate lessons learned content. Project: ${ctx.pname} | Client: ${ctx.cname} | Method: ${ctx.method} | Tech: ${ctx.tech} | Scope: ${ctx.scope}${ctx.instructions?.['lessons-learned'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['lessons-learned']}` : ''}
 Return JSON: {
   projectSummary:string,
@@ -557,6 +566,7 @@ export async function genDocxLessonsLearned(ctx, opts) {
 async function fetchProjectClosure(ctx, opts) {
   return callClaudeJSON({
     ...opts,
+    system: getDeliveryManagerPrompt(),
     user: `Generate project closure report content. Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope} | Tech: ${ctx.tech} | Team: ${ctx.team}${ctx.instructions?.['project-closure'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['project-closure']}` : ''}
 Return JSON: {
   executiveSummary:string,
@@ -600,6 +610,7 @@ export async function genDocxProjectClosure(ctx, opts) {
 async function fetchPID(ctx, opts) {
   return callClaudeJSON({
     ...opts,
+    system: getDeliveryManagerPrompt(),
     user: `Generate a Project Initiation Document. Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Team: ${ctx.team} | Tech: ${ctx.tech} | Start: ${ctx.start} | Industry: ${ctx.industry}${ctx.sow ? `\n\nSOW CONTEXT:\n${ctx.sow.slice(0, 4000)}` : ''}${ctx.instructions?.['pid'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['pid']}` : ''}${ctx.examples?.['pid']?.text ? `\n\nEXAMPLE:\n${ctx.examples['pid'].text.slice(0, 3000)}` : ''}
 Return JSON:
 {

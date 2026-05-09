@@ -1,5 +1,6 @@
 import JSZip from 'jszip'
 import { callClaudeJSON } from './api.js'
+import { getDeliveryManagerPrompt, getSteeringPrompt } from './agilePrompts.js'
 
 // ── Constants (16:9 widescreen) ───────────────────────────────────────────────
 const W = 12192000   // 13.333 in
@@ -512,6 +513,7 @@ export async function genPptxStatusReport(ctx, opts) {
   const date = new Date().toLocaleDateString('en-GB')
   const d = await callClaudeJSON({
     ...opts,
+    system: getDeliveryManagerPrompt(),
     user: `Generate a weekly delivery status report presentation. Be specific and professional — write as a senior project manager would.
 Project: ${ctx.pname} | Client: ${ctx.cname} | DM: ${ctx.dm || 'TBC'} | Method: ${ctx.method || 'Agile'}
 Scope: ${ctx.scope}${ctx.sow ? `\n\nStatement of Work:\n${ctx.sow.slice(0,2500)}` : ''}
@@ -557,6 +559,7 @@ export async function genKickoffDeck(ctx, opts) {
   const color = ctx.theme?.primary || '#4F46E5'
   const d = await callClaudeJSON({
     ...opts,
+    system: getDeliveryManagerPrompt(),
     user: `Generate a project kick-off presentation. Write as a senior consultant — specific, professional, no generic filler.
 Project: ${ctx.pname} | Client: ${ctx.cname} | Start: ${ctx.start || 'TBC'} | Method: ${ctx.method} | Sprint: ${ctx.sprint}
 Team: ${ctx.team} | Tech: ${ctx.tech || 'TBC'} | Industry: ${ctx.industry || 'TBC'}
@@ -606,6 +609,7 @@ export async function genDeliveryReport(ctx, opts) {
   const date = new Date().toLocaleDateString('en-GB')
   const d = await callClaudeJSON({
     ...opts,
+    system: getDeliveryManagerPrompt(),
     user: `Generate a delivery status report presentation. Write as a senior project manager — specific, professional.
 Project: ${ctx.pname} | Client: ${ctx.cname} | DM: ${ctx.dm || 'TBC'} | Method: ${ctx.method}
 Scope: ${ctx.scope}${ctx.sow ? `\n\nStatement of Work:\n${ctx.sow.slice(0,2500)}` : ''}
@@ -707,7 +711,7 @@ export async function genPptxSteeringPack(ctx, opts) {
   const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const d = await callClaudeJSON({
     ...opts,
-    system: 'You are a senior delivery manager preparing a steering committee pack. Be concise and executive-focused.',
+    system: getSteeringPrompt(),
     user: `Generate steering committee pack content. Project: ${ctx.pname} | Client: ${ctx.cname} | Scope: ${ctx.scope} | Team: ${ctx.team} | Start: ${ctx.start}${ctx.sow ? `\n\nSOW:\n${ctx.sow.slice(0, 3000)}` : ''}${ctx.instructions?.['steering-pack'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['steering-pack']}` : ''}
 Return ONLY this JSON:
 {

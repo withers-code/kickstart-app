@@ -1,9 +1,10 @@
 import { callClaude } from './api.js'
+import { getConfluencePrompt, getBAPrompt } from './agilePrompts.js'
 
 export async function genConfluencePrompt(ctx, opts) {
   return callClaude({
     ...opts,
-    system: 'You are a senior delivery manager at Kickstart. Generate detailed Atlassian Rovo prompts and Confluence wiki markup.',
+    system: getConfluencePrompt(),
     user: `Create an Atlassian Rovo prompt to build a full Confluence project space for:
 Project: ${ctx.pname} | Client: ${ctx.cname} | DM: ${ctx.dm} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}${ctx.instructions?.['confluence'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['confluence']}` : ''}${ctx.examples?.['confluence']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['confluence'].text.slice(0, 4000)}` : ''}
 
@@ -31,7 +32,7 @@ export async function genJiraPrompt(ctx, opts) {
 
   return callClaude({
     ...opts,
-    system: 'You are a senior BA at Kickstart. Generate Atlassian Rovo prompts and Jira backlogs.',
+    system: getBAPrompt(),
     user: `Create an Atlassian Rovo prompt to build a full Jira backlog for:
 Project: ${ctx.pname} | Client: ${ctx.cname} | Method: ${ctx.method} | Sprint: ${ctx.sprint} | Scope: ${ctx.scope}${sowSection}${ctx.instructions?.['jira-sow'] ? `\n\nCUSTOM INSTRUCTIONS: ${ctx.instructions['jira-sow']}` : ''}${ctx.examples?.['jira-sow']?.text ? `\n\nEXAMPLE — match this quality and format:\n${ctx.examples['jira-sow'].text.slice(0, 4000)}` : ''}
 
